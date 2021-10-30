@@ -26,6 +26,7 @@ function App() {
           </Route>
         </Switch>
       </Router>
+      <div class='footer'>@naaadams</div>
     </div>
   );
 }
