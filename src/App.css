@@ -1,0 +1,25 @@
+.App {
+  margin: 150px auto;
+  width: 475px;
+}
+
+.container {
+  background-color: #fcfcfc;
+  min-height: 100vh;
+  border: 2px solid orange;
+  font-size: calc(10px + 2vmin);
+  color: black;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
