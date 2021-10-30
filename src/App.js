@@ -11,17 +11,19 @@ function App() {
     <div className='App'>
       <Router>
         <NavBar />
-        <Switch path='/music'>
-          <Music />
-        </Switch>
-        <Switch path='/software'>
-          <Software />
-        </Switch>
-        <Switch path='/contact'>
-          <Contact />
-        </Switch>
-        <Switch path='/'>
-          <Home />
+        <Switch>
+          <Route path='/music'>
+            <Music />
+          </Route>
+          <Route path='/software'>
+            <Software />
+          </Route>
+          <Route path='/contact'>
+            <Contact />
+          </Route>
+          <Route path='/'>
+            <Home />
+          </Route>
         </Switch>
       </Router>
     </div>
