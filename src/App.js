@@ -1,27 +1,29 @@
 import './App.css';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import Home from './pages/Home';
+import Music from './pages/Music';
+import Software from './pages/Software';
+import Contact from './pages/Contact';
+import NavBar from './components/NavBar';
 
 function App() {
   return (
     <div className='App'>
-      <div className='container'>
-        <p>
-          I'm Nathaniel (but you can call me Nate). Sunt enim sint dolore
-          ullamco cupidatat do commodo nisi duis minim mollit deserunt ad. Dolor
-          dolore voluptate anim in esse. Excepteur minim ad aliquip aute commodo
-          qui laborum pariatur eu. Eu labore consectetur laborum proident amet.
-          Excepteur cillum ut excepteur est eu dolor dolor pariatur ea quis sit
-          et. Magna voluptate ullamco sit fugiat sunt consectetur aliqua.
-        </p>
-        <a
-          className='App-link'
-          href='https://reactjs.org'
-          target='_blank'
-          rel='noopener noreferrer'
-        >
-          Learn React
-        </a>
-      </div>
+      <Router>
+        <NavBar />
+        <Switch path='/music'>
+          <Music />
+        </Switch>
+        <Switch path='/software'>
+          <Software />
+        </Switch>
+        <Switch path='/contact'>
+          <Contact />
+        </Switch>
+        <Switch path='/'>
+          <Home />
+        </Switch>
+      </Router>
     </div>
   );
 }
