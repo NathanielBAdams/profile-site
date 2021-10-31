@@ -52,6 +52,7 @@ a:-webkit-any-link {
   color: var(--primary);
   text-decoration: none;
   font-size: 1rem;
+  transition: 0.25s;
 }
 
 a:-webkit-any-link:hover {
