@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function Home() {
   return (
     <div className='container'>
@@ -6,15 +8,15 @@ export default function Home() {
         suburbs of Chicago and now live in New York.
       </p>
       <p>
-        <a href='/music' className='anti-link'>
+        <Link className='anti-link' to='/music'>
           I compose and publish music
-        </a>{' '}
+        </Link>{' '}
         for choirs and vocal ensembles.
       </p>
       <p>
-        <a href='/music' className='anti-link'>
+        <Link className='anti-link' to='/software'>
           I create and maintain software
-        </a>{' '}
+        </Link>{' '}
         for modern web applications.
       </p>
       <p>I also make pizza from scratch on a weekly basis.</p>
