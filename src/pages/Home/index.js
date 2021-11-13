@@ -27,3 +27,17 @@ export default function Home() {
     </div>
   );
 }
+
+/*
+TODO: Next steps 
+ - sync pizzaPics bucket to site - prebuild
+ - Is this triggered differently through amplify?
+ - Render all the pics in a custom pizzaPic components
+ - Need a PizzaPicContainer as well
+
+ - Make a wireframe for music and software - decide what you want to share.
+ - flesh those out as well
+  - get it all deployed to amplify URL
+  - link it up to nathaniel-adams.com DNS record
+  - PROFIT
+*/

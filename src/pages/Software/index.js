@@ -1,15 +1,22 @@
 export default function Software() {
   return (
     <div className='container'>
-      <p>Software</p>
-      <a
-        className='App-link'
-        href='https://reactjs.org'
-        target='_blank'
-        rel='noopener noreferrer'
-      >
-        Learn React
-      </a>
+      <div className='text-area'>
+        I currently work for{' '}
+        <a
+          className='anti-link'
+          href='https://clearme.com'
+          target='_blank'
+          rel='noopener noreferrer'
+        >
+          CLEAR
+        </a>
+        , a biometrics and security company, primarily designing and maintaining
+        user-facing applications.
+      </div>
+      <div className='text-area'>
+        In addition, I create personal projects that are interesting to me:
+      </div>
     </div>
   );
 }

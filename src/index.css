@@ -48,6 +48,10 @@ code {
   margin-bottom: 50px;
 }
 
+.text-area {
+  margin-top: 1rem;
+}
+
 a:-webkit-any-link {
   color: var(--base-font);
   text-decoration: none;
