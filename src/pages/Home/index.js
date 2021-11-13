@@ -19,7 +19,11 @@ export default function Home() {
         </Link>{' '}
         for modern web applications.
       </p>
-      <p>I also make pizza from scratch on a weekly basis.</p>
+      <p>
+        <Link to='/pizza'>
+          I also make pizza from scratch on a weekly basis.
+        </Link>
+      </p>
     </div>
   );
 }

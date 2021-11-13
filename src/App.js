@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Music from './pages/Music';
 import Software from './pages/Software';
 import Contact from './pages/Contact';
+import Pizza from './pages/Pizza';
 import NavBar from './components/NavBar';
 
 function App() {
@@ -20,6 +21,9 @@ function App() {
           </Route>
           <Route path='/contact'>
             <Contact />
+          </Route>
+          <Route path='/pizza'>
+            <Pizza />
           </Route>
           <Route path='/'>
             <Home />
