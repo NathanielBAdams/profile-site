@@ -26,7 +26,7 @@ function App() {
           </Route>
         </Switch>
       </Router>
-      <div class='footer'>@naaadams</div>
+      <div className='footer'>@naaadams</div>
     </div>
   );
 }
