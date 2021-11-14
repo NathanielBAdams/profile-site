@@ -1,4 +1,8 @@
+import Amplify, { Storage } from 'aws-amplify';
+import awsconfig from './aws-exports';
+
 import './App.css';
+
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Music from './pages/Music';
@@ -6,6 +10,8 @@ import Software from './pages/Software';
 import Contact from './pages/Contact';
 import Pizza from './pages/Pizza';
 import NavBar from './components/NavBar';
+
+Amplify.configure(awsconfig);
 
 function App() {
   return (

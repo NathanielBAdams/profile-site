@@ -10,6 +10,17 @@
       "StackName": "amplify-profilesite-dev-162121",
       "StackId": "arn:aws:cloudformation:us-east-1:530651939488:stack/amplify-profilesite-dev-162121/53cd1da0-1a50-11ec-8786-1270b8286e1b",
       "AmplifyAppId": "d31a9r1cr9fb1w"
+    },
+    "categories": {
+      "auth": {
+        "profilesite2d651e0d": {}
+      },
+      "function": {
+        "S3Trigger34881fe7": {
+          "deploymentBucketName": "amplify-profilesite-dev-162121-deployment",
+          "s3Key": "amplify-builds/S3Trigger34881fe7-67624769312f356d4c79-build.zip"
+        }
+      }
     }
   }
 }
