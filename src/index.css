@@ -1,7 +1,7 @@
 :root {
-  --primary: rgb(36, 34, 46);
-  --secondary: rgb(10, 145, 255);
-  --tertiary: rgba(10, 145, 255, 0.75);
+  --base-font: rgb(36, 34, 46);
+  --primary: rgb(10, 145, 255);
+  --secondary: rgba(10, 145, 255, 0.75);
 }
 html {
   font-size: 18px;
@@ -48,24 +48,28 @@ code {
   margin-bottom: 50px;
 }
 
+.text-area {
+  margin-top: 1rem;
+}
+
 a:-webkit-any-link {
-  color: var(--primary);
+  color: var(--base-font);
   text-decoration: none;
   font-size: 1rem;
   transition: 0.25s;
 }
 
 a:-webkit-any-link:hover {
-  color: var(--secondary);
+  color: var(--primary);
   transition: 0.25s;
 }
 
 .anti-link {
-  color: var(--secondary) !important;
+  color: var(--primary) !important;
 }
 
 .anti-link:hover {
-  color: var(--secondary) !important;
+  color: var(--primary) !important;
   text-decoration: underline;
   transition: 0.4s;
 }
@@ -88,9 +92,6 @@ a:-webkit-any-link:hover {
 .title {
   font-size: 1.35em !important;
   font-weight: 700;
-}
-.App-link {
-  color: #61dafb;
 }
 
 @media (max-width: 600px) {

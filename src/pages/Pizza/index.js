@@ -1,10 +1,9 @@
-export default function Music() {
+export default function Pizza() {
   return (
     <div className='container'>
-      <p>
-       Music
-      </p>
+      <p>Pizza</p>
       
+     
     </div>
   );
 }
