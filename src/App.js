@@ -1,8 +1,6 @@
-import Amplify, { Storage } from 'aws-amplify';
+import Amplify from 'aws-amplify';
 import awsconfig from './aws-exports';
-
 import './App.css';
-
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Music from './pages/Music';
