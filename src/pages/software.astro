@@ -17,7 +17,7 @@ import { FaLinkedin } from 'react-icons/fa';
         </p>
 
         <p class="paragraph">
-          I'm currently at <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer" class="link"><strong>Datadog</strong></a>,
+          I'm currently at <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer" class="datadog-link"><strong>Datadog</strong></a>,
           working on our native Cloud SIEM product.
         </p>
 
@@ -80,5 +80,16 @@ import { FaLinkedin } from 'react-icons/fa';
 
   .link:hover {
     opacity: 1;
+  }
+
+  .datadog-link {
+    color: rgb(99, 44, 166);
+    text-decoration: none;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  .datadog-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
   }
 </style>
