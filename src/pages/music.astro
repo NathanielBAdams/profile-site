@@ -1,0 +1,110 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/Section.astro';
+
+// Placeholder catalog entries — swap in real works/recordings/video links.
+const catalog = [
+  { title: 'Lumen', ensemble: 'SATB, piano', videoUrl: '' },
+  { title: 'Evening Prayer', ensemble: 'SSA, string quartet', videoUrl: '' },
+];
+---
+<Layout
+  title="Music — Nate Adams"
+  description="Nate Adams is a NYC-based choral composer and singer, performing regularly with the New York Philharmonic at Lincoln Center and Carnegie Hall."
+>
+  <Section>
+    <div class="container">
+      <div class="text">
+        <h2 class="heading">Music</h2>
+        <p class="paragraph">
+          I write music for choirs and voices, and perform professionally as a singer —
+          including regular concert performances with the New York Philharmonic at
+          Lincoln Center and Carnegie Hall.
+        </p>
+
+        <p class="paragraph">
+          My published works include pieces for SATB choir, chamber ensembles, and solo voices.
+          Feel free to <a href="mailto:nathanielbadams@gmail.com" class="link">get in touch</a>!
+        </p>
+
+        <h3 class="subheading">Selected Works</h3>
+        <ul class="catalog">
+          {catalog.map((piece) => (
+            <li class="catalog-item">
+              <span class="catalog-title">{piece.title}</span>
+              <span class="catalog-meta">{piece.ensemble}</span>
+              {piece.videoUrl && (
+                <a href={piece.videoUrl} target="_blank" rel="noopener noreferrer" class="link">Watch</a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </Section>
+</Layout>
+
+<style>
+  .container {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .text {
+    max-width: 560px;
+    text-align: left;
+  }
+
+  .heading {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .subheading {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .paragraph {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .link {
+    color: #1a1a1a;
+    text-decoration: underline;
+  }
+
+  .catalog {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .catalog-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .catalog-title {
+    font-weight: 600;
+  }
+
+  .catalog-meta {
+    color: #555;
+    font-size: 0.95rem;
+  }
+</style>

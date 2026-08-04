@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nathaniel-adams.com/sitemap-index.xml

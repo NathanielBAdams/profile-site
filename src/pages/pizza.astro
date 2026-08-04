@@ -1,0 +1,54 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/Section.astro';
+import Slideshow from '../components/Slideshow';
+---
+<Layout
+  title="Pizza — Nate Adams"
+  description="A weekly ritual: Nate Adams makes pizza from scratch every Sunday."
+>
+  <Section>
+    <div class="container">
+      <div class="text">
+        <h2 class="heading">Pizza</h2>
+        <p class="paragraph">
+          Every Sunday, I make pizza from scratch. What started as a Covid exploration
+          has become a little ritual that blends creativity, fermentation, and carbs. Here's a taste:
+        </p>
+      </div>
+
+      <div class="slideshow">
+        <Slideshow client:load />
+      </div>
+    </div>
+  </Section>
+</Layout>
+
+<style>
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .text {
+    max-width: 600px;
+  }
+
+  .heading {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .paragraph {
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+
+  .slideshow {
+    max-width: 640px;
+    width: 100%;
+  }
+</style>

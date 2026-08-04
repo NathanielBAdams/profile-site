@@ -1,52 +1,69 @@
-import { Link, useLocation } from 'react-router-dom';
 import * as Popover from '@radix-ui/react-popover';
 import { useState } from 'react';
 
-function Navbar() {
-    const location = useLocation();
-    const [open, setOpen] = useState(false);
-  
-    return (
-      <nav className="navbar">
-        <div className="navbar-inner">
-            {/* Left side: always visible */}
-            <Link to="/" className="nav-name">Nathaniel Adams</Link>
-    
-            {/* Right side: responsive nav controls */}
-            <div className="nav-controls">
-            {/* Desktop links */}
-            <div className="desktop-nav">
-                <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>Home</Link>
-                <Link to="/coding" className={`nav-link ${location.pathname === '/coding' ? 'active' : ''}`}>Coding</Link>
-                <Link to="/music" className={`nav-link ${location.pathname === '/music' ? 'active' : ''}`}>Music</Link>
-                <Link to="/pizza" className={`nav-link ${location.pathname === '/pizza' ? 'active' : ''}`}>Pizza</Link>
-            </div>
-    
-            {/* Mobile hamburger */}
-            <div className="mobile-nav">
-                <Popover.Root open={open} onOpenChange={setOpen}>
-                <Popover.Trigger asChild>
-                    <button className="hamburger">☰</button>
-                </Popover.Trigger>
-                <Popover.Portal>
+const NAV_LINKS = [
+  { href: '/', label: 'Home' },
+  { href: '/choral-contracting', label: 'Choral Contracting' },
+  { href: '/music', label: 'Music' },
+  { href: '/software', label: 'Software' },
+  { href: '/pizza', label: 'Pizza' },
+];
+
+type NavbarProps = {
+  currentPath: string;
+};
+
+function Navbar({ currentPath }: NavbarProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <nav className="navbar">
+      <div className="navbar-inner">
+        <a href="/" className="nav-name">Nate Adams</a>
+
+        <div className="nav-controls">
+          <div className="desktop-nav">
+            {NAV_LINKS.map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                className={`nav-link ${currentPath === href ? 'active' : ''}`}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+
+          <div className="mobile-nav">
+            <Popover.Root open={open} onOpenChange={setOpen}>
+              <Popover.Trigger asChild>
+                <button className="hamburger" aria-label="Open menu">☰</button>
+              </Popover.Trigger>
+              <Popover.Portal>
                 <Popover.Content
-                    className="popover-content"
-                    side="bottom"
-                    align="end"
-                    sideOffset={8}
+                  className="popover-content"
+                  side="bottom"
+                  align="end"
+                  sideOffset={8}
+                >
+                  {NAV_LINKS.map(({ href, label }) => (
+                    <a
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      className="popover-link"
                     >
-                    <Link to="/" onClick={() => setOpen(false)} className="popover-link">Home</Link>
-                    <Link to="/coding" onClick={() => setOpen(false)} className="popover-link">Coding</Link>
-                    <Link to="/music" onClick={() => setOpen(false)} className="popover-link">Music</Link>
-                    <Link to="/pizza" onClick={() => setOpen(false)} className="popover-link">Pizza</Link>
-                    </Popover.Content>
-                </Popover.Portal>
-                </Popover.Root>
-            </div>
-            </div>
+                      {label}
+                    </a>
+                  ))}
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
+          </div>
         </div>
-      </nav>
-    );
-  }
-  
+      </div>
+    </nav>
+  );
+}
+
 export default Navbar;

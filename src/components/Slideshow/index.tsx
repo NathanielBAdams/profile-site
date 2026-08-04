@@ -3,14 +3,14 @@ import image1 from '../../assets/pizza_1.jpeg';
 import image2 from '../../assets/pizza_2.jpeg';
 import image3 from '../../assets/pizza_3.jpeg';
 
-const images = [image1, image2, image3];
+const images = [image1.src, image2.src, image3.src];
 const AUTO_CYCLE_INTERVAL = 4000;
 
 function Slideshow() {
   const [index, setIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [isFading, setIsFading] = useState(false);
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startAutoCycle = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);

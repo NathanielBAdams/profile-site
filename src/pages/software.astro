@@ -1,0 +1,90 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/Section.astro';
+import { FaLinkedin, FaGithub } from 'react-icons/fa';
+import { HiOutlineDocumentArrowDown } from 'react-icons/hi2';
+---
+<Layout
+  title="Software Engineering — Nate Adams"
+  description="Nate Adams is a front-end software engineer building intuitive, performant web apps with React and TypeScript."
+>
+  <Section>
+    <div class="container">
+      <div class="text">
+        <h2 class="heading">Software Engineering</h2>
+        <p class="paragraph">
+          I'm a front-end engineer focused on building intuitive, performant web apps using React, TypeScript, and modern tooling.
+          I care deeply about design systems, accessibility, and making software feel simple.
+        </p>
+
+        <p class="paragraph">
+          I've worked on projects at <strong>CLEAR</strong>, collaborated with cross-functional teams, and led migrations to new UI frameworks.
+        </p>
+
+        <div class="links">
+          <a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer" class="link">
+            <FaLinkedin size={20} /> LinkedIn
+          </a>
+          <a href="https://github.com/NathanielBAdams" target="_blank" rel="noopener noreferrer" class="link">
+            <FaGithub size={20} /> GitHub
+          </a>
+          <a href="https://drive.google.com/uc?export=download&id=1NksGRtliCD9-qZrCR51xql0OxoeecOh0" target="_blank" rel="noopener noreferrer" class="link">
+            <HiOutlineDocumentArrowDown size={20} /> Resume
+          </a>
+        </div>
+      </div>
+    </div>
+  </Section>
+</Layout>
+
+<style>
+  .container {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .text {
+    max-width: 500px;
+    text-align: left;
+  }
+
+  .heading {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .paragraph {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.4;
+    transition: opacity 0.2s ease-in-out;
+    cursor: pointer;
+    opacity: 0.85;
+  }
+
+  .link:hover {
+    opacity: 1;
+  }
+</style>
