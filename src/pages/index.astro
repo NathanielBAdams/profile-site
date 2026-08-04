@@ -5,9 +5,11 @@ import Section from '../components/Section.astro';
 <Layout
   title="Nate Adams — Choral Contractor, Composer & Software Engineer"
   description="Nate Adams is a NYC-based choral contractor, composer, and software engineer. He hires choirs and vocalists for live tapings, concerts, and events at venues including Carnegie Hall, Radio City, and Madison Square Garden."
+  image="/images/profile-photo.jpg"
 >
   <Section>
-    <h1 class="hero-heading">Hi, I'm Nate 👋</h1>
+    <img class="avatar" src="/images/profile-photo.jpg" alt="Nate Adams" />
+    <h1 class="hero-heading">Hi, I'm Nate</h1>
     <p class="hero-text">
       I'm a choral contractor, composer, and software engineer based in NYC.
       This site is a little corner for my work, music, and weekly dough rituals.
@@ -16,6 +18,16 @@ import Section from '../components/Section.astro';
 </Layout>
 
 <style>
+  .avatar {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1.5rem;
+    background-color: #e8e8e8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
   .hero-heading {
     font-size: 2.5rem;
     margin-bottom: 1rem;
