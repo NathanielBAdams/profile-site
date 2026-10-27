@@ -1,95 +1,52 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/Section.astro';
-import { FaLinkedin } from 'react-icons/fa';
+import Instrument from '../components/Instrument.astro';
 ---
 <Layout
   title="Nate Adams | Software Engineering"
   description="Nate Adams works at the intersection of front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM."
 >
-  <Section>
-    <div class="container">
-      <div class="text">
-        <h1 class="heading">Software Engineering</h1>
-        <p class="paragraph">
-          I work at the intersection of front-end engineering and product design,
-          specializing in AI-assisted workflows.
-        </p>
+  <section class="page header software-header">
+    <Instrument class="rings" />
+    <h1 class="display">Software</h1>
+    <p class="lede">
+      I work at the intersection of front-end engineering and product design, specializing in
+      AI-assisted workflows.
+    </p>
+  </section>
 
-        <p class="paragraph">
-          I'm currently at <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer" class="datadog-link"><strong>Datadog</strong></a>,
-          working on our native Cloud SIEM product.
+  <section class="page rows">
+    <div class="row">
+      <h2 class="row-label">Now</h2>
+      <div class="row-body">
+        <p>
+          At <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer">Datadog</a>,
+          working on the native Cloud SIEM product.
         </p>
-
-        <div class="links">
-          <a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer" class="link">
-            <FaLinkedin size={20} /> LinkedIn
-          </a>
-        </div>
       </div>
     </div>
-  </Section>
+    <div class="row">
+      <h2 class="row-label">Elsewhere</h2>
+      <div class="row-body">
+        <p class="links">
+          <a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </p>
+      </div>
+    </div>
+  </section>
 </Layout>
 
 <style>
-  .container {
-    display: flex;
-    flex-direction: row;
-    gap: 2rem;
-    align-items: flex-start;
-    justify-content: center;
-    flex-wrap: wrap;
+  .software-header {
+    position: relative;
   }
 
-  .text {
-    max-width: 500px;
-    text-align: left;
-  }
-
-  .heading {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  .paragraph {
-    font-size: 1.125rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-  }
-
-  .links {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1.25rem;
-  }
-
-  .link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #1a1a1a;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 1rem;
-    line-height: 1.4;
-    transition: opacity 0.2s ease-in-out;
-    cursor: pointer;
-    opacity: 0.85;
-  }
-
-  .link:hover {
-    opacity: 1;
-  }
-
-  .datadog-link {
-    color: rgb(99, 44, 166);
-    text-decoration: none;
-    transition: opacity 0.2s ease-in-out;
-  }
-
-  .datadog-link:hover {
-    opacity: 0.8;
-    text-decoration: underline;
+  .software-header :global(.rings) {
+    position: absolute;
+    width: min(30rem, 100vw);
+    right: -8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: -1;
   }
 </style>

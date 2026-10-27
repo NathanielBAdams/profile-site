@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/choral-contracting/', label: 'Choral Contracting' },
+  { href: '/choral-contracting/', label: 'Choral contracting' },
   { href: '/music/', label: 'Music' },
   { href: '/software/', label: 'Software' },
 ];

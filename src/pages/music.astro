@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/Section.astro';
+import Frame from '../components/Frame.astro';
 
 type Work = {
   title: string;
@@ -58,135 +58,83 @@ const jsonLd = {
     ...(w.videoUrl && { recordedAs: { '@type': 'MusicRecording', url: w.videoUrl } }),
   })),
 };
+const luxVideo = 'https://www.youtube.com/watch?v=8FUHC_xR0aM';
+const luxThumb = 'https://i.ytimg.com/vi/8FUHC_xR0aM/hqdefault.jpg';
 ---
 <Layout
   title="Nathaniel Adams | Choral Composer"
   description="Choral music by NYC composer Nathaniel Adams, published by Walton Music and Gentry Publications: He Came All So Still (SATB), Lux Brumalis (SATB and piano), and Black Is the Color (SSAA)."
   jsonLd={jsonLd}
 >
-  <Section>
-    <div class="container">
-      <div class="text">
-        <h1 class="heading">Music</h1>
-        <p class="paragraph">
-          I write music for choirs and voices. I also sing professionally, including regular
-          concert performances at Lincoln Center and Carnegie Hall.
-        </p>
+  <section class="page header">
+    <h1 class="display">Music</h1>
+    <p class="lede">
+      I write music for choirs and voices. I also sing professionally, including regular
+      concert performances at Lincoln Center and Carnegie Hall.
+    </p>
+  </section>
 
-        <h2 class="subheading">Published Works</h2>
-        <ul class="catalog">
-          {works.map((w) => (
-            <li class="catalog-item">
-              <h3 class="catalog-title">
-                <a href={w.url} target="_blank" rel="noopener noreferrer">{w.title}</a>
-                {w.subtitle && <span class="catalog-subtitle"> ({w.subtitle})</span>}
-              </h3>
-              <p class="catalog-meta">{w.voicing} · {w.publisher}{w.catalog && ` ${w.catalog}`}</p>
-              <p class="catalog-details">{w.details}</p>
-              <p class="catalog-links">
-                <a href={w.url} target="_blank" rel="noopener noreferrer" class="link">Score</a>
-                {w.videoUrl && (
-                  <a href={w.videoUrl} target="_blank" rel="noopener noreferrer" class="link">Watch a performance</a>
-                )}
-              </p>
-            </li>
-          ))}
-        </ul>
+  <section class="page rows" aria-label="Published works">
+    {works.map((w) => (
+      <article class="row">
+        <h2 class="row-label">
+          {w.title}
+          {w.subtitle && <span class="row-sub">{w.subtitle}</span>}
+        </h2>
+        <div class="row-body">
+          <p class="muted">{w.voicing}. {w.publisher}{w.catalog && `, ${w.catalog}`}.</p>
+          <p>{w.details}</p>
+          <p class="links">
+            <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>
+            {w.videoUrl && <a href={w.videoUrl} target="_blank" rel="noopener noreferrer">Watch a performance</a>}
+          </p>
+        </div>
+      </article>
+    ))}
+  </section>
 
-        <p class="paragraph listen">
-          More recordings on <a href={soundcloud} target="_blank" rel="noopener noreferrer" class="link">SoundCloud</a>.
-          For commissions or perusal scores, <a href="mailto:nathanielbadams@gmail.com" class="link">get in touch</a>.
-        </p>
-      </div>
-    </div>
-  </Section>
+  <section class="page video">
+    <a class="video-link" href={luxVideo} target="_blank" rel="noopener noreferrer">
+      <Frame>
+        <img src={luxThumb} alt="The Missouri State Chorale performing Lux Brumalis" width="480" height="360" loading="lazy" />
+      </Frame>
+      <span class="video-caption">Lux Brumalis, performed by the Missouri State Chorale</span>
+    </a>
+  </section>
+
+  <section class="page closing">
+    <h2 class="closing-title">Commissions and perusal scores</h2>
+    <p>
+      For new work, perusal copies, or performance questions, email me.
+      More recordings are on <a href="https://soundcloud.com/nathanielbadams" target="_blank" rel="noopener noreferrer">SoundCloud</a>.
+    </p>
+    <a class="button" href="mailto:nathanielbadams@gmail.com?subject=Music%20inquiry">Email nathanielbadams@gmail.com</a>
+  </section>
 </Layout>
 
 <style>
-  .container {
-    display: flex;
-    justify-content: center;
+  .video {
+    padding-bottom: clamp(3rem, 7vw, 5rem);
   }
 
-  .text {
-    max-width: 600px;
-    text-align: left;
-  }
-
-  .heading {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  .subheading {
-    font-size: 1.25rem;
-    margin-top: 2rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .paragraph {
-    font-size: 1.125rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-  }
-
-  .link {
-    color: #1a1a1a;
-    text-decoration: underline;
-  }
-
-  .catalog {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .catalog-item {
-    padding: 1rem 0;
-    border-bottom: 1px solid #e0e0e0;
-  }
-
-  .catalog-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 0.25rem;
-  }
-
-  .catalog-title a {
-    color: inherit;
+  .video-link {
+    display: inline-block;
     text-decoration: none;
+    width: min(34rem, 100%);
   }
 
-  .catalog-title a:hover {
+  .video-link img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .video-caption {
+    display: block;
+    margin-top: 0.6rem;
     text-decoration: underline;
-  }
-
-  .catalog-subtitle {
-    font-weight: 400;
-    font-style: italic;
-  }
-
-  .catalog-meta {
-    color: #555;
-    font-size: 0.95rem;
-    margin: 0 0 0.4rem;
-  }
-
-  .catalog-details {
-    margin: 0 0 0.4rem;
-    line-height: 1.5;
-  }
-
-  .catalog-links {
-    display: flex;
-    gap: 1rem;
-    margin: 0;
-    font-size: 0.95rem;
-  }
-
-  .listen {
-    margin-top: 1.5rem;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
   }
 </style>

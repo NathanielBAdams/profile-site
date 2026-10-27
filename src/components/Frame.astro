@@ -1,0 +1,33 @@
+---
+// Corner-bracket ticks around an image, like the registration marks on a plate.
+interface Props { class?: string }
+const { class: className } = Astro.props;
+---
+<div class:list={['frame', className]}>
+  <slot />
+  <span class="tick tl" aria-hidden="true"></span>
+  <span class="tick tr" aria-hidden="true"></span>
+  <span class="tick bl" aria-hidden="true"></span>
+  <span class="tick br" aria-hidden="true"></span>
+</div>
+
+<style>
+  .frame {
+    position: relative;
+    padding: 10px;
+  }
+
+  .tick {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: var(--carbon);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  .tl { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+  .tr { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+  .bl { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+  .br { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+</style>

@@ -1,30 +1,131 @@
+@import '@fontsource-variable/instrument-sans/wdth.css';
+
+:root {
+  --snow: #fafbfc;
+  --carbon: #16181b;
+  --slate: #5e6b78;
+  --ice: #d9e1e8;
+  --frost: #eef2f5;
+  --steel: #4f7391;
+
+  --font: 'Instrument Sans Variable', system-ui, sans-serif;
+  --measure: 38rem;
+  --page: 70rem;
+  --gutter: clamp(1.25rem, 4vw, 3rem);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --snow: #0f1113;
+    --carbon: #e8ecef;
+    --slate: #9aa7b3;
+    --ice: #2a3036;
+    --frost: #171a1d;
+    --steel: #8fb0cb;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 106.25%; /* 17px */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  background-color: #f9f9f9;
-  color: #1a1a1a;
-  font-family: 'Inter', sans-serif;
+  background: var(--snow);
+  color: var(--carbon);
+  font-family: var(--font);
+  font-weight: 400;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
 }
 
 a {
-  text-decoration: none;
   color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--slate);
 }
 
 a:hover {
-  text-decoration: underline;
+  color: var(--steel);
+  text-decoration-color: var(--steel);
 }
 
+:focus-visible {
+  outline: 2px solid var(--steel);
+  outline-offset: 3px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.page {
+  width: 100%;
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* A square, 1px button. Used for the one primary action on a page. */
+.button {
+  display: inline-block;
+  border: 1px solid var(--carbon);
+  padding: 0.7rem 1.2rem;
+  text-decoration: none;
+  font-weight: 500;
+  color: var(--carbon);
+  background: var(--snow);
+}
+
+.button:hover {
+  background: var(--carbon);
+  color: var(--snow);
+}
+
+/* Navbar (rendered by the React Navbar component) */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: #ffffffcc;
+  background: color-mix(in srgb, var(--snow) 88%, transparent);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid #e0e0e0;
-  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--ice);
 }
 
 .navbar-inner {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 1rem var(--gutter);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -32,50 +133,44 @@ a:hover {
 
 .nav-name {
   font-weight: 600;
-  font-size: 1.05rem;
   text-decoration: none;
-  color: #1a1a1a;
   line-height: 1;
 }
 
 .nav-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.hamburger {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #1a1a1a;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-  display: flex;
-  align-items: center;
 }
 
 .nav-link {
   text-decoration: none;
-  color: #1a1a1a;
-  font-weight: 500;
-  padding-bottom: 2px;
-  transition: border-bottom 0.2s ease;
+  color: var(--slate);
+  font-size: 0.94rem;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--carbon);
 }
 
 .nav-link.active {
-  border-bottom: 2px solid #1a1a1a;
+  text-decoration: underline;
+  text-decoration-color: var(--carbon);
+  text-underline-offset: 0.45em;
 }
 
-/* Responsive logic */
+.hamburger {
+  background: none;
+  border: 1px solid var(--ice);
+  color: var(--carbon);
+  font-size: 1.1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  cursor: pointer;
+}
+
 .desktop-nav {
   display: none;
-}
-
-.mobile-nav {
-  display: block;
 }
 
 @media (min-width: 768px) {
@@ -90,35 +185,134 @@ a:hover {
 }
 
 .popover-content {
-  opacity: 0;
-  transform: translateY(-5px);
-  transition: opacity 200ms ease, transform 200ms ease;
-
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  background: var(--snow);
+  border: 1px solid var(--ice);
   padding: 0.5rem 1rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  min-width: 12rem;
   z-index: 1000;
-}
-
-.popover-content[data-state='open'] {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.popover-content[data-state='closed'] {
-  opacity: 0;
-  transform: translateY(-5px);
 }
 
 .popover-link {
   text-decoration: none;
-  color: #1a1a1a;
-  font-size: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--ice);
+}
+
+.popover-link:last-child {
+  border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Page header: big condensed title, short lede */
+.header {
+  padding-top: clamp(3rem, 9vw, 7rem);
+  padding-bottom: clamp(2rem, 5vw, 3.5rem);
+}
+
+.display {
+  font-size: clamp(2.8rem, 8vw, 6rem);
+  font-stretch: 78%;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  max-width: 14ch;
+}
+
+.lede {
+  margin-top: 1.5rem;
+  font-size: clamp(1.15rem, 2vw, 1.35rem);
+  line-height: 1.4;
+  max-width: var(--measure);
+}
+
+.header .button {
+  margin-top: 2rem;
+}
+
+/* Rows: a label column and a content column, ruled in ice. Same pattern as Home. */
+.rows {
+  padding-top: clamp(2rem, 5vw, 3.5rem);
+  padding-bottom: clamp(3rem, 8vw, 5rem);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  padding: 1.6rem 0;
+  border-top: 1px solid var(--ice);
+}
+
+.row:last-child {
+  border-bottom: 1px solid var(--ice);
+}
+
+.row-label {
+  font-size: 1.5rem;
+  font-stretch: 85%;
   font-weight: 500;
-  padding: 0.25rem 0;
+}
+
+.row-sub {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1rem;
+  font-stretch: 100%;
+  font-weight: 400;
+  color: var(--slate);
+}
+
+.row-body {
+  max-width: var(--measure);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.row-body ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.muted {
+  color: var(--slate);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+}
+
+@media (min-width: 800px) {
+  .row {
+    grid-template-columns: 18rem 1fr;
+    align-items: baseline;
+  }
+}
+
+/* Closing call to action */
+.closing {
+  padding-top: clamp(1rem, 3vw, 2rem);
+  padding-bottom: clamp(3.5rem, 8vw, 6rem);
+}
+
+.closing-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-stretch: 85%;
+  margin-bottom: 0.9rem;
+}
+
+.closing p {
+  max-width: var(--measure);
+  margin-bottom: 1.75rem;
 }

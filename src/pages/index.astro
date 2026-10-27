@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/Section.astro';
+import Frame from '../components/Frame.astro';
+import Instrument from '../components/Instrument.astro';
 
 const home = new URL('/', Astro.site).href;
 const jsonLd = {
@@ -16,6 +17,24 @@ const jsonLd = {
   knowsAbout: ['Choral contracting', 'Choral composition', 'Software engineering'],
   sameAs: ['https://www.linkedin.com/in/adamsnathaniel/'],
 };
+
+const areas = [
+  {
+    title: 'Choral contracting',
+    href: '/choral-contracting/',
+    text: 'I hire and coordinate professional singers for television tapings, concerts, and events at Carnegie Hall, Radio City Music Hall, and Madison Square Garden.',
+  },
+  {
+    title: 'Music',
+    href: '/music/',
+    text: 'I write choral music, published by Walton Music and Gentry Publications, and sing professionally in New York.',
+  },
+  {
+    title: 'Software',
+    href: '/software/',
+    text: 'I work on front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM.',
+  },
+];
 ---
 <Layout
   title="Nate Adams | NYC Choral Contractor, Composer & Software Engineer"
@@ -23,35 +42,121 @@ const jsonLd = {
   image="/images/profile-photo.jpg"
   jsonLd={jsonLd}
 >
-  <Section>
-    <img class="avatar" src="/images/profile-photo.jpg" alt="Portrait of Nate Adams" />
-    <h1 class="hero-heading">Hi, I'm Nate</h1>
-    <p class="hero-text">
-      I'm a choral contractor, composer, and software engineer based in NYC.
-      This site is a little corner for my work and music.
-    </p>
-  </Section>
+  <section class="page hero">
+    <Instrument class="rings" />
+    <div class="hero-text">
+      <h1 class="name">Nate Adams</h1>
+      <p class="role">Choral contractor, composer, and software engineer in New York City.</p>
+    </div>
+    <Frame class="portrait">
+      <img src="/images/profile-photo.jpg" alt="Portrait of Nate Adams" width="320" height="320" />
+    </Frame>
+  </section>
+
+  <section class="page areas" aria-label="What I do">
+    {areas.map((a) => (
+      <a class="area" href={a.href}>
+        <h2 class="area-title">{a.title}</h2>
+        <p class="area-text">{a.text}</p>
+      </a>
+    ))}
+  </section>
 </Layout>
 
 <style>
-  .avatar {
-    width: 128px;
-    height: 128px;
-    border-radius: 50%;
+  .hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    align-items: end;
+    padding-top: clamp(3rem, 10vw, 8rem);
+    padding-bottom: clamp(3rem, 8vw, 6rem);
+    overflow: hidden;
+  }
+
+  .hero :global(.rings) {
+    position: absolute;
+    width: min(46rem, 120vw);
+    right: -12rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: -1;
+  }
+
+  .name {
+    font-size: clamp(3.6rem, 13vw, 9.5rem);
+    font-stretch: 78%;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 0.88;
+  }
+
+  .role {
+    margin-top: 1.5rem;
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    color: var(--slate);
+    max-width: 26ch;
+    line-height: 1.35;
+  }
+
+  .hero :global(.portrait) {
+    width: min(16rem, 60vw);
+  }
+
+  .hero :global(.portrait img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
     object-fit: cover;
-    margin-bottom: 1.5rem;
-    background-color: #e8e8e8;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    filter: grayscale(1) contrast(1.05);
   }
 
-  .hero-heading {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+  @media (min-width: 800px) {
+    .hero {
+      grid-template-columns: 1fr auto;
+    }
   }
 
-  .hero-text {
-    font-size: 1.25rem;
-    line-height: 1.6;
-    color: #333;
+  .areas {
+    padding-bottom: clamp(3rem, 8vw, 6rem);
+  }
+
+  .area {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    padding: 1.6rem 0;
+    border-top: 1px solid var(--ice);
+    text-decoration: none;
+  }
+
+  .area:last-child {
+    border-bottom: 1px solid var(--ice);
+  }
+
+  .area-title {
+    font-size: 1.5rem;
+    font-stretch: 85%;
+  }
+
+  .area-text {
+    color: var(--slate);
+    max-width: var(--measure);
+  }
+
+  .area:hover {
+    color: inherit;
+  }
+
+  .area:hover .area-title {
+    color: var(--steel);
+  }
+
+  @media (min-width: 800px) {
+    .area {
+      grid-template-columns: 18rem 1fr;
+      align-items: baseline;
+    }
   }
 </style>

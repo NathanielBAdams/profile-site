@@ -1,5 +1,6 @@
 ---
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -36,9 +37,6 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
     <meta name="twitter:description" content={description} />
     {ogImageURL && <meta name="twitter:image" content={ogImageURL} />}
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     {jsonLd && (
       <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
@@ -46,6 +44,9 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
   </head>
   <body>
     <Navbar currentPath={Astro.url.pathname} client:load />
-    <slot />
+    <main>
+      <slot />
+    </main>
+    <Footer />
   </body>
 </html>
