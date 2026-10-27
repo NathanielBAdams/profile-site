@@ -2,14 +2,67 @@
 import Layout from '../layouts/Layout.astro';
 import Section from '../components/Section.astro';
 
-// TODO(Nate): confirm instrumentation and add more works / recording links.
-const catalog = [
-  { title: 'Lux', ensemble: 'String quartet', videoUrl: '' },
+type Work = {
+  title: string;
+  subtitle?: string;
+  voicing: string;
+  details: string;
+  publisher: string;
+  catalog?: string;
+  url: string;
+  videoUrl?: string;
+};
+
+const works: Work[] = [
+  {
+    title: 'He Came All So Still',
+    voicing: 'SATB divisi, a cappella',
+    details: 'A Christmas motet written for the Manhattan Chorale.',
+    publisher: 'Gentry Publications',
+    catalog: 'JG2538',
+    url: 'https://www.gentrypublications.com/product/he-came-all-so-still-satb/',
+  },
+  {
+    title: 'Lux Brumalis',
+    subtitle: "Wint'ry Light",
+    voicing: 'SATB with semi-improvised piano or string quartet',
+    details:
+      'A multi-movement winter work (about 9 minutes) on my own text, written for the St. Charles Singers.',
+    publisher: 'Walton Music',
+    catalog: 'WW1913',
+    url: 'https://giamusic.com/resource/lux-brumalis-print-ww1913',
+    videoUrl: 'https://www.youtube.com/watch?v=8FUHC_xR0aM',
+  },
+  {
+    title: "Black Is the Color of My True Love's Hair",
+    voicing: 'SSAA',
+    details: 'An arrangement of the traditional folk song for treble choir.',
+    publisher: 'Walton Music',
+    catalog: 'WW1760',
+    url: 'https://giamusic.com/resource/black-is-the-color-of-my-true-loves-hair-print-ww1760',
+  },
 ];
+
+const soundcloud = 'https://soundcloud.com/nathanielbadams';
+const home = new URL('/', Astro.site).href;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': works.map((w) => ({
+    '@type': 'MusicComposition',
+    name: w.subtitle ? `${w.title} (${w.subtitle})` : w.title,
+    composer: { '@type': 'Person', name: 'Nathaniel Adams', url: home },
+    publisher: { '@type': 'Organization', name: w.publisher },
+    ...(w.catalog && { identifier: w.catalog }),
+    url: w.url,
+    ...(w.videoUrl && { recordedAs: { '@type': 'MusicRecording', url: w.videoUrl } }),
+  })),
+};
 ---
 <Layout
-  title="Music — Nate Adams"
-  description="Nate Adams is a NYC-based choral composer and singer, performing regularly at Lincoln Center and Carnegie Hall."
+  title="Choral Composer — Nathaniel Adams"
+  description="Choral music by NYC composer Nathaniel Adams, published by Walton Music and Gentry Publications: He Came All So Still (SATB), Lux Brumalis (SATB and piano), and Black Is the Color (SSAA)."
+  jsonLd={jsonLd}
 >
   <Section>
     <div class="container">
@@ -20,23 +73,30 @@ const catalog = [
           including regular concert performances at Lincoln Center and Carnegie Hall.
         </p>
 
-        <p class="paragraph">
-          My published works include pieces for SATB choir, chamber ensembles, and solo voices.
-          Feel free to <a href="mailto:nathanielbadams@gmail.com" class="link">get in touch</a>!
-        </p>
-
-        <h2 class="subheading">Selected Works</h2>
+        <h2 class="subheading">Published Works</h2>
         <ul class="catalog">
-          {catalog.map((piece) => (
+          {works.map((w) => (
             <li class="catalog-item">
-              <span class="catalog-title">{piece.title}</span>
-              <span class="catalog-meta">{piece.ensemble}</span>
-              {piece.videoUrl && (
-                <a href={piece.videoUrl} target="_blank" rel="noopener noreferrer" class="link">Watch</a>
-              )}
+              <h3 class="catalog-title">
+                <a href={w.url} target="_blank" rel="noopener noreferrer">{w.title}</a>
+                {w.subtitle && <span class="catalog-subtitle"> ({w.subtitle})</span>}
+              </h3>
+              <p class="catalog-meta">{w.voicing} · {w.publisher}{w.catalog && ` ${w.catalog}`}</p>
+              <p class="catalog-details">{w.details}</p>
+              <p class="catalog-links">
+                <a href={w.url} target="_blank" rel="noopener noreferrer" class="link">Score</a>
+                {w.videoUrl && (
+                  <a href={w.videoUrl} target="_blank" rel="noopener noreferrer" class="link">Watch a performance</a>
+                )}
+              </p>
             </li>
           ))}
         </ul>
+
+        <p class="paragraph listen">
+          More recordings on <a href={soundcloud} target="_blank" rel="noopener noreferrer" class="link">SoundCloud</a>.
+          For commissions or perusal scores, <a href="mailto:nathanielbadams@gmail.com" class="link">get in touch</a>.
+        </p>
       </div>
     </div>
   </Section>
@@ -45,15 +105,11 @@ const catalog = [
 <style>
   .container {
     display: flex;
-    flex-direction: row;
-    gap: 2rem;
-    align-items: flex-start;
     justify-content: center;
-    flex-wrap: wrap;
   }
 
   .text {
-    max-width: 560px;
+    max-width: 600px;
     text-align: left;
   }
 
@@ -85,24 +141,52 @@ const catalog = [
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
   }
 
   .catalog-item {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    padding-bottom: 0.75rem;
+    padding: 1rem 0;
     border-bottom: 1px solid #e0e0e0;
   }
 
   .catalog-title {
+    font-size: 1.1rem;
     font-weight: 600;
+    margin: 0 0 0.25rem;
+  }
+
+  .catalog-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .catalog-title a:hover {
+    text-decoration: underline;
+  }
+
+  .catalog-subtitle {
+    font-weight: 400;
+    font-style: italic;
   }
 
   .catalog-meta {
     color: #555;
     font-size: 0.95rem;
+    margin: 0 0 0.4rem;
+  }
+
+  .catalog-details {
+    margin: 0 0 0.4rem;
+    line-height: 1.5;
+  }
+
+  .catalog-links {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .listen {
+    margin-top: 1.5rem;
   }
 </style>
