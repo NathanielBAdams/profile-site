@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import image1 from '../../assets/pizza_1.jpeg';
-import image2 from '../../assets/pizza_2.jpeg';
-import image3 from '../../assets/pizza_3.jpeg';
-
-const images = [image1.src, image2.src, image3.src];
 const AUTO_CYCLE_INTERVAL = 4000;
 
-function Slideshow() {
+type SlideshowProps = {
+  images: { src: string; alt: string }[];
+};
+
+function Slideshow({ images }: SlideshowProps) {
   const [index, setIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [isFading, setIsFading] = useState(false);
@@ -58,12 +57,13 @@ function Slideshow() {
   };
 
   return (
-    <div style={styles.wrapper}>
+    <div>
+      <div style={styles.wrapper}>
       {/* Previous image fades out */}
       {prevIndex !== null && (
         <img
-          src={images[prevIndex]}
-          alt={`Pizza ${prevIndex + 1}`}
+          src={images[prevIndex].src}
+          alt={images[prevIndex].alt}
           style={{
             ...styles.image,
             opacity: isFading ? 0 : 1,
@@ -74,8 +74,8 @@ function Slideshow() {
 
       {/* Current image fades in */}
       <img
-        src={images[index]}
-        alt={`Pizza ${index + 1}`}
+        src={images[index].src}
+        alt={images[index].alt}
         style={{
           ...styles.image,
           opacity: 1,
@@ -83,9 +83,11 @@ function Slideshow() {
         }}
       />
 
+      </div>
+
       <div style={styles.controls}>
-        <button onClick={handlePrev} style={styles.button}>←</button>
-        <button onClick={handleNext} style={styles.button}>→</button>
+        <button onClick={handlePrev} style={styles.button} aria-label="Previous photo">←</button>
+        <button onClick={handleNext} style={styles.button} aria-label="Next photo">→</button>
       </div>
     </div>
   );
@@ -108,14 +110,14 @@ const styles = {
     wrapper: {
         position: 'relative' as const,
         width: '100%',
-        aspectRatio: '4 / 3', // or '16 / 9', depending on your photos
+        aspectRatio: '3 / 4', // photos are portrait
         overflow: 'hidden' as const,
       },
   image: {
     ...baseImageStyle,
   },
   controls: {
-    marginTop: '0.5rem',
+    marginTop: '0.75rem',
     display: 'flex',
     justifyContent: 'center',
     gap: '1rem',

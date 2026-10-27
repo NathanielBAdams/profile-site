@@ -3,6 +3,8 @@ frontend:
   phases:
     preBuild:
       commands:
+        - nvm install 22
+        - nvm use 22
         - npm ci
     # IMPORTANT - Please verify your build commands
     build:

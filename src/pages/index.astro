@@ -1,14 +1,30 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Section from '../components/Section.astro';
+
+const home = new URL('/', Astro.site).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Nate Adams',
+  alternateName: 'Nathaniel Adams',
+  url: home,
+  image: new URL('/images/profile-photo.jpg', Astro.site).href,
+  jobTitle: ['Choral Contractor', 'Composer', 'Software Engineer'],
+  worksFor: { '@type': 'Organization', name: 'Datadog', url: 'https://www.datadoghq.com/' },
+  address: { '@type': 'PostalAddress', addressLocality: 'New York', addressRegion: 'NY', addressCountry: 'US' },
+  knowsAbout: ['Choral contracting', 'Choral composition', 'Software engineering'],
+  sameAs: ['https://www.linkedin.com/in/adamsnathaniel/'],
+};
 ---
 <Layout
   title="Nate Adams — Choral Contractor, Composer & Software Engineer"
   description="Nate Adams is a NYC-based choral contractor, composer, and software engineer. He hires choirs and vocalists for live tapings, concerts, and events at venues including Carnegie Hall, Radio City, and Madison Square Garden."
   image="/images/profile-photo.jpg"
+  jsonLd={jsonLd}
 >
   <Section>
-    <img class="avatar" src="/images/profile-photo.jpg" alt="Nate Adams" />
+    <img class="avatar" src="/images/profile-photo.jpg" alt="Portrait of Nate Adams" />
     <h1 class="hero-heading">Hi, I'm Nate</h1>
     <p class="hero-text">
       I'm a choral contractor, composer, and software engineer based in NYC.

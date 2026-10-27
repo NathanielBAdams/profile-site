@@ -10,7 +10,8 @@ interface Props {
 }
 
 const { title, description, image, jsonLd } = Astro.props;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const canonicalURL = new URL(path, Astro.site);
 const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
 ---
 <!doctype html>
@@ -35,6 +36,8 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
     <meta name="twitter:description" content={description} />
     {ogImageURL && <meta name="twitter:image" content={ogImageURL} />}
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     {jsonLd && (

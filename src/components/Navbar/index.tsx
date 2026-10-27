@@ -3,15 +3,17 @@ import { useState } from 'react';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/choral-contracting', label: 'Choral Contracting' },
-  { href: '/music', label: 'Music' },
-  { href: '/software', label: 'Software' },
-  { href: '/pizza', label: 'Pizza' },
+  { href: '/choral-contracting/', label: 'Choral Contracting' },
+  { href: '/music/', label: 'Music' },
+  { href: '/software/', label: 'Software' },
+  { href: '/pizza/', label: 'Pizza' },
 ];
 
 type NavbarProps = {
   currentPath: string;
 };
+
+const normalize = (p: string) => (p.endsWith('/') ? p : `${p}/`);
 
 function Navbar({ currentPath }: NavbarProps) {
   const [open, setOpen] = useState(false);
@@ -27,7 +29,7 @@ function Navbar({ currentPath }: NavbarProps) {
               <a
                 key={href}
                 href={href}
-                className={`nav-link ${currentPath === href ? 'active' : ''}`}
+                className={`nav-link ${normalize(currentPath) === href ? 'active' : ''}`}
               >
                 {label}
               </a>

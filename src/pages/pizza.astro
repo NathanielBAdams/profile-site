@@ -2,6 +2,23 @@
 import Layout from '../layouts/Layout.astro';
 import Section from '../components/Section.astro';
 import Slideshow from '../components/Slideshow';
+import { getImage } from 'astro:assets';
+import pizza1 from '../assets/pizza_1.jpeg';
+import pizza2 from '../assets/pizza_2.jpeg';
+import pizza3 from '../assets/pizza_3.jpeg';
+
+const photos = [
+  { src: pizza1, alt: 'Homemade pizza topped with sausage and herbs, sliced on a wooden board' },
+  { src: pizza2, alt: 'Square pan pizza with mushrooms, green peppers, and tomatoes on a metal peel' },
+  { src: pizza3, alt: 'Two homemade pizzas, one pepperoni and one with basil, cooling on wire racks' },
+];
+
+const images = await Promise.all(
+  photos.map(async ({ src, alt }) => {
+    const img = await getImage({ src, width: 960, format: 'webp' });
+    return { src: img.src, alt };
+  }),
+);
 ---
 <Layout
   title="Pizza — Nate Adams"
@@ -10,7 +27,7 @@ import Slideshow from '../components/Slideshow';
   <Section>
     <div class="container">
       <div class="text">
-        <h2 class="heading">Pizza</h2>
+        <h1 class="heading">Pizza</h1>
         <p class="paragraph">
           Every Sunday, I make pizza from scratch. What started as a Covid exploration
           has become a little ritual that blends creativity, fermentation, and carbs. Here's a taste:
@@ -18,7 +35,7 @@ import Slideshow from '../components/Slideshow';
       </div>
 
       <div class="slideshow">
-        <Slideshow client:load />
+        <Slideshow images={images} client:load />
       </div>
     </div>
   </Section>
@@ -48,7 +65,7 @@ import Slideshow from '../components/Slideshow';
   }
 
   .slideshow {
-    max-width: 640px;
+    max-width: 480px;
     width: 100%;
   }
 </style>
