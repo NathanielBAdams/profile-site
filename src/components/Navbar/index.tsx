@@ -6,7 +6,6 @@ const NAV_LINKS = [
   { href: '/choral-contracting/', label: 'Choral Contracting' },
   { href: '/music/', label: 'Music' },
   { href: '/software/', label: 'Software' },
-  { href: '/pizza/', label: 'Pizza' },
 ];
 
 type NavbarProps = {
