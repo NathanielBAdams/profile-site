@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Frame from '../components/Frame.astro';
+import YouTube from '../components/YouTube.astro';
 
 type Work = {
   title: string;
@@ -43,7 +44,6 @@ const works: Work[] = [
   },
 ];
 
-const soundcloud = 'https://soundcloud.com/nathanielbadams';
 const home = new URL('/', Astro.site).href;
 
 const jsonLd = {
@@ -58,8 +58,6 @@ const jsonLd = {
     ...(w.videoUrl && { recordedAs: { '@type': 'MusicRecording', url: w.videoUrl } }),
   })),
 };
-const luxVideo = 'https://www.youtube.com/watch?v=8FUHC_xR0aM';
-const luxThumb = 'https://i.ytimg.com/vi/8FUHC_xR0aM/hqdefault.jpg';
 ---
 <Layout
   title="Nathaniel Adams | Choral Composer"
@@ -94,12 +92,10 @@ const luxThumb = 'https://i.ytimg.com/vi/8FUHC_xR0aM/hqdefault.jpg';
   </section>
 
   <section class="page video">
-    <a class="video-link" href={luxVideo} target="_blank" rel="noopener noreferrer">
-      <Frame>
-        <img src={luxThumb} alt="The Missouri State Chorale performing Lux Brumalis" width="480" height="360" loading="lazy" />
-      </Frame>
-      <span class="video-caption">Lux Brumalis, performed by the Missouri State Chorale</span>
-    </a>
+    <Frame>
+      <YouTube id="8FUHC_xR0aM" title="Lux Brumalis, performed by the Missouri State Chorale" />
+    </Frame>
+    <p class="video-caption">Lux Brumalis, performed by the Missouri State Chorale</p>
   </section>
 
   <section class="page closing">
@@ -117,24 +113,13 @@ const luxThumb = 'https://i.ytimg.com/vi/8FUHC_xR0aM/hqdefault.jpg';
     padding-bottom: clamp(3rem, 7vw, 5rem);
   }
 
-  .video-link {
-    display: inline-block;
-    text-decoration: none;
-    width: min(34rem, 100%);
-  }
-
-  .video-link img {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
+  .video :global(.frame) {
+    width: min(44rem, 100%);
   }
 
   .video-caption {
-    display: block;
     margin-top: 0.6rem;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.2em;
+    color: var(--slate);
+    font-size: 0.94rem;
   }
 </style>
