@@ -1,5 +1,6 @@
 ---
 // Faint calibration rings and tick marks, drawn behind hero content.
+// On load the rings draw, the ticks sweep in, and a needle swings once and settles.
 interface Props { class?: string }
 const { class: className } = Astro.props;
 const c = 300;
@@ -10,19 +11,23 @@ const ticks = Array.from({ length: 120 }, (_, i) => {
   const r1 = 276;
   const r2 = major ? 296 : 284;
   return {
-    x1: c + r1 * Math.cos(a), y1: c + r1 * Math.sin(a),
-    x2: c + r2 * Math.cos(a), y2: c + r2 * Math.sin(a), major,
+    x1: (c + r1 * Math.cos(a)).toFixed(1), y1: (c + r1 * Math.sin(a)).toFixed(1),
+    x2: (c + r2 * Math.cos(a)).toFixed(1), y2: (c + r2 * Math.sin(a)).toFixed(1), major,
   };
 });
 ---
 <svg class:list={['instrument', className]} viewBox="0 0 600 600" aria-hidden="true" focusable="false">
-  <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
-    {rings.map((r) => <circle cx={c} cy={c} r={r} />)}
-    <line x1="0" y1={c} x2="600" y2={c} />
-    <line x1={c} y1="0" x2={c} y2="600" />
-    {ticks.map((t) => (
-      <line x1={t.x1.toFixed(1)} y1={t.y1.toFixed(1)} x2={t.x2.toFixed(1)} y2={t.y2.toFixed(1)} opacity={t.major ? 1 : 0.6} />
-    ))}
+  <g fill="none" stroke="currentColor" stroke-width="1">
+    {rings.map((r, i) => <circle class="ring" cx={c} cy={c} r={r} pathLength="1" style={`--i:${i}`} />)}
+    <line class="axis" x1="0" y1={c} x2="600" y2={c} pathLength="1" />
+    <line class="axis" x1={c} y1="0" x2={c} y2="600" pathLength="1" />
+    <g>
+      {ticks.map((t, i) => (
+        <line class:list={['tick', { major: t.major }]} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} style={`--i:${i}`} />
+      ))}
+    </g>
+    <line class="needle" x1={c} y1={c} x2={c + 250} y2={c} />
+    <circle class="hub" cx={c} cy={c} r="3" />
   </g>
 </svg>
 
@@ -30,5 +35,67 @@ const ticks = Array.from({ length: 120 }, (_, i) => {
   .instrument {
     color: var(--ice);
     pointer-events: none;
+  }
+
+  .tick {
+    opacity: 0.6;
+  }
+
+  .tick.major {
+    opacity: 1;
+  }
+
+  .needle {
+    stroke: var(--steel);
+    transform-box: view-box;
+    transform-origin: 300px 300px;
+    transform: rotate(-38deg);
+  }
+
+  .hub {
+    stroke: var(--steel);
+    fill: var(--snow);
+  }
+
+  .ring,
+  .axis {
+    stroke-dasharray: 1;
+  }
+
+  /* Load sequence. Each animation only defines its starting state, so with
+     animations disabled everything is simply in its final position. */
+  .ring {
+    animation: draw 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 110ms);
+  }
+
+  .axis {
+    animation: draw 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s both;
+  }
+
+  .tick {
+    animation: appear 0.3s ease-out both;
+    animation-delay: calc(350ms + var(--i) * 7ms);
+  }
+
+  .needle {
+    animation: sweep 2s cubic-bezier(0.25, 0.8, 0.2, 1) 0.4s both;
+  }
+
+  .hub {
+    animation: appear 0.4s ease-out 0.4s both;
+  }
+
+  @keyframes draw {
+    from { stroke-dashoffset: 1; }
+  }
+
+  @keyframes appear {
+    from { opacity: 0; }
+  }
+
+  @keyframes sweep {
+    from { transform: rotate(-398deg); opacity: 0; }
+    12% { opacity: 1; }
   }
 </style>

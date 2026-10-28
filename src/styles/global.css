@@ -56,6 +56,7 @@ main {
 h1,
 h2,
 h3 {
+  text-wrap: balance;
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.015em;
@@ -64,6 +65,7 @@ h3 {
 
 p {
   margin: 0;
+  text-wrap: pretty;
 }
 
 a {
@@ -105,6 +107,9 @@ img {
   font-weight: 500;
   color: var(--carbon);
   background: var(--snow);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 .button:hover {
@@ -143,9 +148,24 @@ img {
 }
 
 .nav-link {
+  position: relative;
   text-decoration: none;
   color: var(--slate);
   font-size: 0.94rem;
+  transition: color 0.25s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.35em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .nav-link:hover,
@@ -153,10 +173,9 @@ img {
   color: var(--carbon);
 }
 
-.nav-link.active {
-  text-decoration: underline;
-  text-decoration-color: var(--carbon);
-  text-underline-offset: 0.45em;
+.nav-link:hover::after,
+.nav-link.active::after {
+  transform: scaleX(1);
 }
 
 .hamburger {
@@ -204,9 +223,46 @@ img {
   border-bottom: 0;
 }
 
+/* Cross-fade between pages (native view transitions; no JavaScript). */
+@view-transition {
+  navigation: auto;
+}
+
+.navbar {
+  view-transition-name: nav;
+}
+
+.footer {
+  view-transition-name: footer;
+}
+
+::view-transition-old(root) {
+  animation: vt-out 160ms ease-in both;
+}
+
+::view-transition-new(root) {
+  animation: vt-in 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes vt-out {
+  to { opacity: 0; }
+}
+
+@keyframes vt-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
+    animation: none !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation: none !important;
   }
 }

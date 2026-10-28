@@ -48,9 +48,12 @@ const areas = [
       <h1 class="name">Nate Adams</h1>
       <p class="role">Choral contractor, composer, and software engineer in New York City.</p>
     </div>
-    <Frame class="portrait">
-      <img src="/images/profile-photo.jpg" alt="Portrait of Nate Adams" width="320" height="320" />
-    </Frame>
+    <div class="hero-side">
+      <Frame class="portrait">
+        <img src="/images/profile-photo.jpg" alt="Portrait of Nate Adams" width="320" height="320" />
+      </Frame>
+      <p class="coords">40.7128° N, 74.0060° W</p>
+    </div>
   </section>
 
   <section class="page areas" aria-label="What I do">
@@ -92,6 +95,37 @@ const areas = [
     line-height: 0.88;
   }
 
+  .name,
+  .role,
+  .coords {
+    animation: rise 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .name {
+    animation-delay: 0.1s;
+  }
+
+  .role {
+    animation-delay: 0.35s;
+  }
+
+  .coords {
+    animation-delay: 1.6s;
+    animation-duration: 0.8s;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+  }
+
+  .coords {
+    margin-top: 0.75rem;
+    padding-left: 10px;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--slate);
+  }
+
   .role {
     margin-top: 1.5rem;
     font-size: clamp(1.15rem, 2vw, 1.4rem);
@@ -123,6 +157,7 @@ const areas = [
   }
 
   .area {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.4rem;
@@ -145,12 +180,38 @@ const areas = [
     max-width: var(--measure);
   }
 
+  .area::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--steel);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .area-title {
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+      color 0.3s ease;
+  }
+
   .area:hover {
     color: inherit;
   }
 
-  .area:hover .area-title {
+  .area:hover::before,
+  .area:focus-visible::before {
+    transform: scaleX(1);
+  }
+
+  .area:hover .area-title,
+  .area:focus-visible .area-title {
     color: var(--steel);
+    transform: translateX(6px);
   }
 
   @media (min-width: 800px) {
