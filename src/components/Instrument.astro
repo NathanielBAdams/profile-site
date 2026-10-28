@@ -1,8 +1,10 @@
 ---
 // Faint calibration rings and tick marks, drawn behind hero content.
 // On load the rings draw, the ticks sweep in, and a needle swings once and settles.
-interface Props { class?: string }
-const { class: className } = Astro.props;
+interface Props { class?: string; tuner?: boolean }
+const { class: className, tuner = false } = Astro.props;
+const cents = [-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50];
+const marks = cents.map((v) => { const a = ((-90 + v * 0.8) * Math.PI) / 180; const r1 = v === 0 ? 146 : 152; const r2 = v === 0 ? 166 : 162; return { v, x: (300 + 177 * Math.cos(a)).toFixed(1), y: (300 + 177 * Math.sin(a)).toFixed(1), x1: (300 + r1 * Math.cos(a)).toFixed(1), y1: (300 + r1 * Math.sin(a)).toFixed(1), x2: (300 + r2 * Math.cos(a)).toFixed(1), y2: (300 + r2 * Math.sin(a)).toFixed(1) }; });
 const c = 300;
 const rings = [70, 130, 190, 250];
 const ticks = Array.from({ length: 120 }, (_, i) => {
@@ -16,7 +18,7 @@ const ticks = Array.from({ length: 120 }, (_, i) => {
   };
 });
 ---
-<svg class:list={['instrument', className]} viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+<svg class:list={['instrument', className, { tuner }]} viewBox="0 0 600 600" aria-hidden="true" focusable="false">
   <g fill="none" stroke="currentColor" stroke-width="1">
     {rings.map((r, i) => <circle class="ring" cx={c} cy={c} r={r} pathLength="1" style={`--i:${i}`} />)}
     <line class="axis" x1="0" y1={c} x2="600" y2={c} pathLength="1" />
@@ -26,7 +28,13 @@ const ticks = Array.from({ length: 120 }, (_, i) => {
         <line class:list={['tick', { major: t.major }]} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} style={`--i:${i}`} />
       ))}
     </g>
-    <line class="needle" x1={c} y1={c} x2={c + 250} y2={c} />
+    {tuner && marks.map((m, i) => (
+      <g class="mark" style={`--i:${i}`}>
+        <line x1={m.x1} y1={m.y1} x2={m.x2} y2={m.y2} class:list={['mark-line', { zero: m.v === 0 }]} />
+        <text x={m.x} y={m.y} text-anchor="middle" dominant-baseline="middle" class="mark-text">{m.v === 0 ? '0' : m.v > 0 ? `+${m.v}` : `−${-m.v}`}</text>
+      </g>
+    ))}
+    <line class="needle" x1={c} y1={c} x2={c + (tuner ? 172 : 250)} y2={c} />
     <circle class="hub" cx={c} cy={c} r="3" />
   </g>
 </svg>
@@ -51,6 +59,29 @@ const ticks = Array.from({ length: 120 }, (_, i) => {
     transform-origin: 300px 300px;
     transform: rotate(-38deg);
   }
+
+  .tuner .needle {
+    transform: rotate(-90deg);
+    animation-name: sweep-tune;
+  }
+
+  @keyframes sweep-tune {
+    from { transform: rotate(-450deg); opacity: 0; }
+    12% { opacity: 1; }
+    78% { transform: rotate(-84deg); }
+    90% { transform: rotate(-92deg); }
+  }
+
+  .mark-line { stroke: var(--slate); opacity: 0.55; }
+  .mark-line.zero { stroke: var(--steel); opacity: 1; }
+  .mark-text {
+    fill: var(--slate);
+    stroke: none;
+    font-family: var(--font);
+    font-size: 9px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mark { animation: appear 0.4s ease-out both; animation-delay: calc(900ms + var(--i) * 40ms); }
 
   .hub {
     stroke: var(--steel);
