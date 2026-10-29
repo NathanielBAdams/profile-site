@@ -26,3 +26,6 @@ dist-ssr
 
 # Claude local settings
 .claude/settings.local.json
+
+# Local design mockups (not deployed)
+public/mock/
