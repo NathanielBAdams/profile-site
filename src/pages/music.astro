@@ -3,16 +3,20 @@ import Layout from '../layouts/Layout.astro';
 import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
 import YouTube from '../components/YouTube.astro';
+import SoundCloud from '../components/SoundCloud.astro';
 
 type Work = {
   title: string;
   subtitle?: string;
   voicing: string;
-  details: string;
-  publisher: string;
+  details?: string;
+  ensemble?: string; // who it was written for or recorded by, shown as is
+  publisher?: string;
   catalog?: string;
-  url: string;
+  url?: string; // the score
   videoUrl?: string;
+  listen?: string; // a SoundCloud track or set
+  set?: boolean; // true when `listen` is a set
 };
 
 const works: Work[] = [
@@ -23,6 +27,7 @@ const works: Work[] = [
     publisher: 'Gentry Publications',
     catalog: 'JG2538',
     url: 'https://www.gentrypublications.com/product/he-came-all-so-still-satb/',
+    listen: 'https://soundcloud.com/nathanielbadams/he-came-all-so-still',
   },
   {
     title: 'Lux Brumalis',
@@ -34,6 +39,8 @@ const works: Work[] = [
     catalog: 'WW1913',
     url: 'https://giamusic.com/resource/lux-brumalis-print-ww1913',
     videoUrl: 'https://www.youtube.com/watch?v=8FUHC_xR0aM',
+    listen: 'https://soundcloud.com/nathanielbadams/sets/lux-brumalis',
+    set: true,
   },
   {
     title: "Black Is the Color of My True Love's Hair",
@@ -42,22 +49,59 @@ const works: Work[] = [
     publisher: 'Walton Music',
     catalog: 'WW1760',
     url: 'https://giamusic.com/resource/black-is-the-color-of-my-true-loves-hair-print-ww1760',
+    listen: 'https://soundcloud.com/nathanielbadams/black-is-the-color',
   },
+];
+
+const unpublished: Work[] = [
+  {
+    title: 'Luces in Rota',
+    voicing: 'AATBB',
+    ensemble: "His Majesty's Men",
+    listen: 'https://soundcloud.com/nathanielbadams/luces-in-rota',
+  },
+  {
+    title: 'Preces and Responses',
+    voicing: 'SATB',
+    details: 'Settings of the preces and responses for Evensong.',
+    ensemble: "Saint Paul's Evensong Choir, Carroll Gardens, Brooklyn",
+    listen: 'https://soundcloud.com/nathanielbadams/preces-and-responses-satb',
+  },
+  {
+    title: 'Set Me as a Seal',
+    voicing: 'SATB',
+    details: 'Written for my wedding.',
+    listen: 'https://soundcloud.com/nathanielbadams/set-me-as-a-seal',
+  },
+  {
+    title: 'What Songs Were Sung',
+    voicing: 'SATB divisi',
+    ensemble: 'St. Charles Singers',
+    listen: 'https://soundcloud.com/nathanielbadams/what-songs-were-sung',
+  },
+];
+
+const lists = [
+  { id: 'works', heading: 'Published works', works },
+  { id: 'unpublished', heading: 'Unpublished works', works: unpublished },
 ];
 
 const home = new URL('/', Astro.site).href;
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@graph': works.map((w) => ({
-    '@type': 'MusicComposition',
-    name: w.subtitle ? `${w.title} (${w.subtitle})` : w.title,
-    composer: { '@type': 'Person', name: 'Nathaniel Adams', url: home },
-    publisher: { '@type': 'Organization', name: w.publisher },
-    ...(w.catalog && { identifier: w.catalog }),
-    url: w.url,
-    ...(w.videoUrl && { recordedAs: { '@type': 'MusicRecording', url: w.videoUrl } }),
-  })),
+  '@graph': [...works, ...unpublished].map((w) => {
+    const recordings = [w.videoUrl, w.listen].filter(Boolean).map((url) => ({ '@type': 'MusicRecording', url }));
+    return {
+      '@type': 'MusicComposition',
+      name: w.subtitle ? `${w.title} (${w.subtitle})` : w.title,
+      composer: { '@type': 'Person', name: 'Nathaniel Adams', url: home },
+      ...(w.publisher && { publisher: { '@type': 'Organization', name: w.publisher } }),
+      ...(w.catalog && { identifier: w.catalog }),
+      ...(w.url && { url: w.url }),
+      ...(recordings.length && { recordedAs: recordings }),
+    };
+  }),
 };
 ---
 <Layout
@@ -76,28 +120,38 @@ const jsonLd = {
     </div>
   </section>
 
-  <section class="wrap block" aria-labelledby="works">
-    <h2 id="works" class="origin h2">Published works</h2>
-    <div class="works">
-      {works.map((w) => (
-        <article class="grid work">
-          <div class="lead">
-            <h3 class="work-title">{w.title}</h3>
-            {w.subtitle && <p class="work-sub">{w.subtitle}</p>}
-            <p class="work-details">{w.details}</p>
-          </div>
-          <div class="rail work-meta">
-            <p>{w.voicing}</p>
-            <p class="muted">{w.publisher}{w.catalog && `, ${w.catalog}`}</p>
-            <p class="links">
-              <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>
-              {w.videoUrl && <a href="#performance">Watch a performance</a>}
-            </p>
-          </div>
-        </article>
-      ))}
-    </div>
-  </section>
+  {lists.map((list) => (
+    <section class="wrap block" aria-labelledby={list.id}>
+      <h2 id={list.id} class="origin h2">{list.heading}</h2>
+      <div class="works">
+        {list.works.map((w) => (
+          <article class="grid work">
+            <div class="lead">
+              <h3 class="work-title">{w.title}</h3>
+              {w.subtitle && <p class="work-sub">{w.subtitle}</p>}
+              {w.details && <p class="work-details">{w.details}</p>}
+              {w.listen && (
+                <div class="work-listen">
+                  <SoundCloud url={w.listen} title={w.title} set={w.set} />
+                </div>
+              )}
+            </div>
+            <div class="rail work-meta">
+              <p>{w.voicing}</p>
+              {w.ensemble && <p class="muted">{w.ensemble}</p>}
+              {w.publisher && <p class="muted">{w.publisher}{w.catalog && `, ${w.catalog}`}</p>}
+              {(w.url || w.videoUrl) && (
+                <p class="links">
+                  {w.url && <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>}
+                  {w.videoUrl && <a href="#performance">Watch a performance</a>}
+                </p>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  ))}
 
   <section class="wrap block" id="performance" aria-labelledby="perf-title">
     <h2 id="perf-title" class="origin h2">Lux Brumalis, performed by the Missouri State Chorale</h2>
@@ -168,6 +222,10 @@ const jsonLd = {
   .work-details {
     margin-top: 1rem;
     max-width: 34rem;
+  }
+
+  .work-listen {
+    margin-top: 1.25rem;
   }
 
   .work-meta {
