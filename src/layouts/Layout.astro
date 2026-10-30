@@ -42,6 +42,13 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
     {jsonLd && (
       <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
     )}
+    <script is:inline>
+      // Origin rules draw in as their sections arrive (see global.css). Set
+      // before first paint so the bars never flash at full width.
+      if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('draw-origins');
+      }
+    </script>
   </head>
   <body>
     <Nav />
@@ -50,5 +57,20 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
     </main>
     <Footer />
     <MeLine />
+    <script>
+      if (document.documentElement.classList.contains('draw-origins')) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (!e.isIntersecting) continue;
+              e.target.classList.add('drawn');
+              io.unobserve(e.target);
+            }
+          },
+          { rootMargin: '0px 0px -12% 0px' },
+        );
+        document.querySelectorAll('.origin').forEach((el) => io.observe(el));
+      }
+    </script>
   </body>
 </html>
