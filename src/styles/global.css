@@ -149,6 +149,22 @@ img {
   padding-bottom: clamp(3rem, 6vw, 4.5rem);
 }
 
+/* Page headers: on wide screens the title and intro sit in the middle five
+   columns, leaving three columns of staff on each side for chords. The staff
+   reads the text's real position, so this is the only place to change it. */
+@media (min-width: 1200px) {
+  .wrap.header-inner > .staffed,
+  .wrap.hero-inner > .staffed {
+    --col: calc((min(100vw, var(--max)) - 2 * var(--pad) - 11 * var(--gut)) / 12);
+    margin-left: calc(3 * (var(--col) + var(--gut)));
+    max-width: calc(5 * var(--col) + 4 * var(--gut));
+  }
+
+  .wrap.header-inner > .display.staffed {
+    font-size: min(6.4vw, 5.8rem);
+  }
+}
+
 .display {
   font-size: clamp(3.2rem, 10vw, 8.6rem);
   font-weight: 850;

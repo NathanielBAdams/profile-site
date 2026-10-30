@@ -62,8 +62,10 @@ const { staves = 2, center = 0.56 } = Astro.props;
     Object.entries(GLYPHS).map(([k, d]) => [k, new Path2D(d)]),
   ) as Record<GlyphName, Path2D>;
   const ACC: Record<number, GlyphName> = { 1: 'sharp', [-1]: 'flat', 2: 'doubleSharp', [-2]: 'doubleFlat' };
-  const SPECS = CHORDS.map((c) => ({
+  type Spec = { pitches: Pitch[]; side: 'left' | 'right'; treble: Set<string>; bass: Set<string> };
+  const SPECS: Spec[] = CHORDS.map((c) => ({
     pitches: c.notes.map(parsePitch),
+    side: c.side ?? 'right',
     treble: new Set(c.treble ?? []),
     bass: new Set(c.bass ?? []),
   }));
@@ -129,24 +131,41 @@ const { staves = 2, center = 0.56 } = Astro.props;
       draw();
     }
 
-    // Chords sit in the rail columns on wide screens, and in the right part of
-    // the content column on narrow ones. One half-note chord per measure.
+    // Chords sit in measures, one half-note chord each. The right group fills
+    // the rail columns (or the right part of a narrow screen). The left group
+    // fills the space between the clefs and the page title, and appears only
+    // when that space holds measures at least 5.2 staff spaces wide.
     function engraveAll(col: { left: number; right: number }) {
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const gut = Math.min(1.5 * rem, Math.max(rem, window.innerWidth * 0.03)); // --gut
       const cw = col.right - col.left;
       const colW = (cw - 11 * gut) / 12;
-      const left = wide.matches ? col.left + 8 * (colW + gut) - gut / 2 : col.left + cw * 0.4;
-      const right = col.right;
-      const n = SPECS.length;
+      const rights = SPECS.filter((s) => s.side !== 'left');
+      const lefts = SPECS.filter((s) => s.side === 'left');
+      const railL = wide.matches ? col.left + 8 * (colW + gut) - gut / 2 : col.left + cw * 0.4;
+      group(rights, railL, col.right, true);
+      const title = host.querySelector<HTMLElement>('.staffed');
+      if (title && lefts.length) {
+        const textL = title.getBoundingClientRect().left - canvas.getBoundingClientRect().left;
+        const l = clefX + (WIDTH.gClef + 1) * gap;
+        const r = textL - gap;
+        if ((r - l) / lefts.length >= gap * 5.2) group(lefts, l, Math.min(r, l + lefts.length * gap * 7), false);
+      }
+    }
+
+    function group(specs: Spec[], left: number, right: number, last: boolean) {
+      const n = specs.length;
       const mw = (right - left) / n;
-      for (let i = 0; i < n; i++) bars.push({ x: left + i * mw, w: 0.16 });
-      bars.push({ x: right - 1.06 * gap, w: 0.16 }, { x: right - 0.5 * gap, w: 0.5 });
-      SPECS.forEach((spec, i) => {
+      for (let i = 0; i <= n; i++) {
+        if (i === n && last) bars.push({ x: right - 1.06 * gap, w: 0.16 }, { x: right - 0.5 * gap, w: 0.5 });
+        else bars.push({ x: left + i * mw - (i === n ? 0.16 * gap : 0), w: 0.16 });
+      }
+      specs.forEach((spec, i) => {
         const x0 = left + i * mw;
+        const x1 = i === n - 1 && last ? right - 1.06 * gap : x0 + mw;
         const ch: Chord = {
           midis: spec.pitches.map((p) => p.midi),
-          x0, x1: x0 + mw, cx: x0 + mw * 0.6,
+          x0, x1, cx: (x0 + x1) / 2,
           heads: [], accs: [], stems: [], ledgers: [],
           h: 0, pulse: 0, hover: false, sound: null,
         };
@@ -155,8 +174,22 @@ const { staves = 2, center = 0.56 } = Astro.props;
         const down = spec.pitches.filter((p) => !onTreble(p));
         if (up.length) engraveStaff(ch, up, tops[0] + 4 * gap, E4);
         if (down.length) engraveStaff(ch, down, tops[1] + 4 * gap, G2);
+        centerInk(ch);
         chords.push(ch);
       });
+    }
+
+    // Shifts a chord so its ink, accidentals included, is centered in its
+    // measure.
+    function centerInk(ch: Chord) {
+      const nw = WIDTH.noteheadHalf * gap;
+      const lo = Math.min(...ch.heads.map((h) => h.x), ...ch.accs.map((a) => a.x), ...ch.ledgers.map((l) => l.x1));
+      const hi = Math.max(...ch.heads.map((h) => h.x + nw), ...ch.ledgers.map((l) => l.x2));
+      const d = (ch.x0 + ch.x1) / 2 - (lo + hi) / 2;
+      ch.cx += d;
+      for (const g of [...ch.heads, ...ch.accs]) g.x += d;
+      for (const s of ch.stems) s.x += d;
+      for (const l of ch.ledgers) { l.x1 += d; l.x2 += d; }
     }
 
     // Engraves the notes of one chord that sit on one staff: noteheads with a

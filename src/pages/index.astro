@@ -48,12 +48,10 @@ const areas = [
   <section class="hero">
     <Staff center={0.5} />
     <div class="wrap hero-inner">
-      <h1 class="name rise">Nate Adams</h1>
-      <div class="grid">
-        <p class="lead lede rise rise-2" data-staff-quiet>
+      <h1 class="name staffed rise">Nate Adams</h1>
+      <p class="lede staffed rise rise-2" data-staff-quiet>
           <a class="role" href="/choral-contracting/">Choral contractor</a>, <a class="role" href="/music/">composer</a>, and <a class="role" href="/software/">software engineer</a> in New York City.
-        </p>
-      </div>
+      </p>
       <div class="grid below">
         <p class="lead hint">Click the staff to hear a note, or click a chord.</p>
         <div class="rail venues rise rise-3">
@@ -99,6 +97,12 @@ const areas = [
     position: relative;
     padding-top: clamp(3.5rem, 9vw, 7rem);
     padding-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  @media (min-width: 1200px) {
+    .name.staffed {
+      font-size: min(7vw, 6.3rem);
+    }
   }
 
   .name {
