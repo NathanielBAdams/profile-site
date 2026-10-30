@@ -4,6 +4,7 @@ import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
 import YouTube from '../components/YouTube.astro';
 import SoundCloud from '../components/SoundCloud.astro';
+import Linked from '../components/Linked.astro';
 
 type Work = {
   title: string;
@@ -129,7 +130,7 @@ const jsonLd = {
             <div class="lead">
               <h3 class="work-title">{w.title}</h3>
               {w.subtitle && <p class="work-sub">{w.subtitle}</p>}
-              {w.details && <p class="work-details">{w.details}</p>}
+              {w.details && <p class="work-details"><Linked text={w.details} /></p>}
               {w.listen && (
                 <div class="work-listen">
                   <SoundCloud url={w.listen} title={w.title} set={w.set} />
@@ -138,7 +139,7 @@ const jsonLd = {
             </div>
             <div class="rail work-meta">
               <p>{w.voicing}</p>
-              {w.ensemble && <p class="muted">{w.ensemble}</p>}
+              {w.ensemble && <p class="muted"><Linked text={w.ensemble} /></p>}
               {w.publisher && <p class="muted">{w.publisher}{w.catalog && `, ${w.catalog}`}</p>}
               {(w.url || w.videoUrl) && (
                 <p class="links">
@@ -183,7 +184,7 @@ const jsonLd = {
           loading="lazy"
           decoding="async"
         />
-        <figcaption>Singing with His Majesty's Men, Chicago, August 2023.</figcaption>
+        <figcaption>Singing with <Linked text="His Majesty's Men" />, Chicago, August 2023.</figcaption>
       </figure>
     </div>
   </section>
@@ -225,7 +226,7 @@ const jsonLd = {
   }
 
   .work-listen {
-    margin-top: 1.25rem;
+    margin-top: 2.25rem;
   }
 
   .work-meta {
