@@ -211,6 +211,39 @@ img {
   filter: grayscale(1) contrast(1.08);
 }
 
+/* Photo rows: on wide screens, set --cols to each photo's width-to-height
+   ratio (a 3:4 portrait beside a 4:3 landscape is 9fr 16fr) and the photos
+   line up at one height. They stack on phones. */
+.photos {
+  display: grid;
+  gap: 2rem var(--gut);
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+@media (min-width: 834px) {
+  .photos {
+    grid-template-columns: var(--cols, 1fr);
+  }
+}
+
+.photos figure {
+  margin: 0;
+}
+
+.photos img {
+  width: 100%;
+  height: auto;
+  filter: grayscale(1) contrast(1.08);
+}
+
+.photos figcaption {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 /* Heavy figures */
 .figure-n {
   display: block;

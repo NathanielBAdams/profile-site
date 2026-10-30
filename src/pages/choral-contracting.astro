@@ -83,7 +83,8 @@ const credits = [
     <ul class="names">
       {collaborators.map((n) => <li>{n}</li>)}
     </ul>
-    <div class="photos">
+    <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
+    <div class="photos" style="--cols: 9fr 9fr 16fr">
       <figure>
         <img
           src="/images/nate-adams-hans-zimmer-2017.jpg"
@@ -97,6 +98,17 @@ const credits = [
           With Hans Zimmer at Radio City Music Hall, July 2017. I contracted the choir for his two
           concerts there.
         </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="/images/radio-city-hans-zimmer-singers-2017.jpg"
+          alt="Nate Adams and fellow singers in black, wearing headset microphones, seated together for the Hans Zimmer concerts"
+          width="720"
+          height="960"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption>Some of the singers on those concerts, me among them.</figcaption>
       </figure>
       <figure>
         <img
@@ -123,6 +135,30 @@ const credits = [
           {credits.map((c) => <tr><td>{c.type}</td><td>{c.name}</td></tr>)}
         </tbody>
       </table>
+      <div class="photos" style="--cols: 9fr 12fr">
+        <figure>
+          <img
+            src="/images/carnegie-hall-stage.jpg"
+            alt="View from the chorus seats on the Carnegie Hall stage: the orchestra, a full house, and the lit tiers and ceiling above"
+            width="800"
+            height="1422"
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>On stage at Carnegie Hall, from the chorus seats.</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="/images/tonight-show-starring-jimmy-fallon.jpg"
+            alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign"
+            width="750"
+            height="998"
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>At The Tonight Show Starring Jimmy Fallon.</figcaption>
+        </figure>
+      </div>
     </div>
     <div class="rail highlights">
       <h2 class="origin h2">Highlights</h2>
@@ -167,38 +203,6 @@ const credits = [
     padding: 0;
     font: 800 clamp(2.4rem, 6.5vw, 5.4rem)/0.98 var(--head);
     letter-spacing: -0.03em;
-  }
-
-  /* A portrait and a landscape photo side by side at the same height:
-     column widths in the ratio 3/4 : 4/3, which is 9 : 16. */
-  .photos {
-    display: grid;
-    gap: 2rem var(--gut);
-    margin-top: clamp(2.5rem, 5vw, 4rem);
-  }
-
-  @media (min-width: 834px) {
-    .photos {
-      grid-template-columns: 9fr 16fr;
-    }
-  }
-
-  .photos figure {
-    margin: 0;
-  }
-
-  .photos img {
-    width: 100%;
-    height: auto;
-    filter: grayscale(1) contrast(1.08);
-  }
-
-  .photos figcaption {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--rule);
-    color: var(--muted);
-    font-size: 0.9rem;
   }
 
   .highlights {
