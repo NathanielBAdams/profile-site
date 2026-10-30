@@ -7,6 +7,11 @@ import { hz, sampleName } from './pitch';
 
 type Manifest = { version: string; notes: Record<string, { file: string; gain?: number }> };
 type Voice = { midi: number; when: number; detune: number; pan: number; gain: number };
+type Played = { env: GainNode; sources: AudioScheduledSourceNode[] };
+
+// A sounding note or chord, timed on performance.now() so the staff can
+// animate it. `until` moves earlier if the sound is cut off.
+export type Sounding = { at: number; dur: number; until: number; stop(): void };
 
 const BASE = '/audio/voice/';
 const DUR = 1.5; // a half note at 80 beats per minute
@@ -91,7 +96,7 @@ function route(ac: AudioContext, node: AudioNode, pan: number) {
   } else node.connect(master!);
 }
 
-function playSample(ac: AudioContext, buf: AudioBuffer, v: Voice, gain: number) {
+function playSample(ac: AudioContext, buf: AudioBuffer, v: Voice, gain: number): Played {
   const start = ac.currentTime + 0.01 + v.when;
   const src = ac.createBufferSource();
   src.buffer = buf;
@@ -101,11 +106,12 @@ function playSample(ac: AudioContext, buf: AudioBuffer, v: Voice, gain: number) 
   route(ac, env, v.pan);
   src.start(start);
   src.stop(start + DUR + RELEASE + 0.05);
+  return { env, sources: [src] };
 }
 
 // The synth from the first version of the staff: a triangle plus a quiet
 // octave, low-passed, with gentle delayed vibrato.
-function playSynth(ac: AudioContext, v: Voice) {
+function playSynth(ac: AudioContext, v: Voice): Played {
   const start = ac.currentTime + 0.01 + v.when;
   const f = hz(v.midi) * Math.pow(2, v.detune / 1200);
   const out = envelope(ac, start, 0.14 * v.gain, 0.09);
@@ -125,8 +131,10 @@ function playSynth(ac: AudioContext, v: Voice) {
     [1, 'triangle', 1],
     [2, 'sine', 0.18],
   ];
+  const sources: AudioScheduledSourceNode[] = [vib];
   for (const [mult, type, level] of partials) {
     const o = ac.createOscillator();
+    sources.push(o);
     const g = ac.createGain();
     o.type = type;
     o.frequency.value = f * mult;
@@ -139,6 +147,7 @@ function playSynth(ac: AudioContext, v: Voice) {
   }
   vib.start(start);
   vib.stop(start + DUR + RELEASE + 0.05);
+  return { env: out, sources };
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -159,21 +168,61 @@ function humanize(midis: number[]): Voice[] {
   }));
 }
 
-// Play one note or a chord. Call from a click or tap handler.
-export async function play(midis: number[]) {
+const CUT = 0.07; // seconds to fade out a chord that another chord replaces
+let chordSeq = 0;
+let chordNow: Sounding | null = null;
+
+function sounding(ac: AudioContext, played: Played[]): Sounding {
+  const at = performance.now() + 10;
+  const s: Sounding = {
+    at,
+    dur: DUR * 1000,
+    until: at + (DUR + RELEASE) * 1000,
+    stop() {
+      const t = ac.currentTime;
+      for (const { env, sources } of played) {
+        const g = env.gain;
+        g.cancelScheduledValues(t);
+        g.setValueAtTime(Math.max(0.0001, g.value), t);
+        g.exponentialRampToValueAtTime(0.0001, t + CUT);
+        for (const src of sources) {
+          try { src.stop(t + CUT + 0.02); } catch { /* already stopped */ }
+        }
+      }
+      s.until = Math.min(s.until, performance.now() + CUT * 1000);
+    },
+  };
+  return s;
+}
+
+// Play one note or a chord. Call from a click or tap handler. Chords are
+// exclusive: a new chord fades out the one still sounding, and a chord whose
+// samples arrive after a newer click never sounds at all. Single notes can
+// overlap, like a melody with the pedal down.
+export async function play(midis: number[], { chord = false } = {}): Promise<Sounding | null> {
   const ac = unlock();
+  const seq = chord ? ++chordSeq : 0;
   const voices = humanize(midis);
+  let played: Played[] | null = null;
   const m = await Promise.race([prime(), timeout(WAIT_MS, null)]);
+  let bufs: (AudioBuffer | null)[] | null = null;
   if (m) {
     prefetch(midis);
-    const bufs = await Promise.race([
+    bufs = await Promise.race([
       Promise.all(voices.map((v) => buffer(ac, v.midi))),
       timeout(WAIT_MS, null),
     ]);
-    if (bufs && bufs.every(Boolean)) {
-      voices.forEach((v, i) => playSample(ac, bufs[i]!, v, m.notes[sampleName(v.midi)].gain ?? 1));
-      return;
-    }
   }
-  voices.forEach((v) => playSynth(ac, v));
+  if (chord) {
+    if (seq !== chordSeq) return null;
+    chordNow?.stop();
+  }
+  if (m && bufs && bufs.every(Boolean)) {
+    played = voices.map((v, i) => playSample(ac, bufs![i]!, v, m.notes[sampleName(v.midi)].gain ?? 1));
+  } else {
+    played = voices.map((v) => playSynth(ac, v));
+  }
+  const s = sounding(ac, played);
+  if (chord) chordNow = s;
+  return s;
 }

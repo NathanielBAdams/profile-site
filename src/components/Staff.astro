@@ -37,7 +37,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
   // remain, since they only respond to the visitor.
   import { GLYPHS, WIDTH, type GlyphName } from '../scripts/glyphs';
   import { midiOfStep, parsePitch, type Pitch } from '../scripts/pitch';
-  import { play, prefetch, prime } from '../scripts/voice';
+  import { play, prefetch, prime, type Sounding } from '../scripts/voice';
   import { chords as CHORDS } from '../data/chords';
 
   type Line = { y: number; d: Float32Array; v: Float32Array };
@@ -49,7 +49,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
     heads: Glyph[]; accs: Glyph[];
     stems: { x: number; y1: number; y2: number }[];
     ledgers: { x1: number; x2: number; y: number }[];
-    h: number; pulse: number; lit: boolean;
+    h: number; pulse: number; hover: boolean; sound: Sounding | null;
   };
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -148,7 +148,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
           midis: spec.pitches.map((p) => p.midi),
           x0, x1: x0 + mw, cx: x0 + mw * 0.6,
           heads: [], accs: [], stems: [], ledgers: [],
-          h: 0, pulse: 0, lit: false,
+          h: 0, pulse: 0, hover: false, sound: null,
         };
         const onTreble = (p: Pitch) => spec.treble.has(p.name) || (!spec.bass.has(p.name) && p.step >= C4);
         const up = spec.pitches.filter(onTreble);
@@ -331,8 +331,43 @@ const { staves = 2, center = 0.56 } = Astro.props;
         const a = shown(c.cx, reach);
         drawChord(c, INK, idle * a * (1 - c.h));
         drawChord(c, ACCENT, a * c.h);
+        drawPlayhead(c, performance.now());
       }
       drawNote();
+    }
+
+    // While a chord sounds, the lines under it tremble faintly, fading with
+    // the note.
+    function hum(c: Chord, now: number) {
+      const s = c.sound!;
+      const t = (now - s.at) / 1000;
+      if (t < 0) return;
+      const fade = Math.max(0, 1 - (now - s.at) / (s.until - s.at));
+      const i = Math.round((c.cx / W) * (N - 1));
+      lines.forEach((ln, li) => {
+        const f = Math.sin(t * 2 * Math.PI * (5 + li * 0.37)) * 0.09 * fade;
+        for (let o = -6; o <= 6; o++) {
+          const q = i + o;
+          if (q > 0 && q < N - 1) ln.v[q] += f * (1 - Math.abs(o) / 7);
+        }
+      });
+    }
+
+    // A thin vermilion line sweeps the measure over the half note's length,
+    // then fades with the release.
+    function drawPlayhead(c: Chord, now: number) {
+      if (!sounding(c, now) || reduce) return;
+      const s = c.sound!;
+      const p = (now - s.at) / s.dur;
+      if (p < 0) return;
+      const pad = gap * 0.8;
+      const x = c.x0 + pad + Math.min(1, p) * (c.x1 - c.x0 - 2 * pad);
+      const a = p <= 1 ? 1 : Math.max(0, 1 - (now - s.at - s.dur) / (s.until - s.at - s.dur));
+      ctx.save();
+      ctx.globalAlpha = 0.85 * a;
+      ctx.fillStyle = ACCENT;
+      ctx.fillRect(x, tops[0] - gap, 1.5, tops[1] + 5 * gap - (tops[0] - gap));
+      ctx.restore();
     }
 
     function step() {
@@ -357,8 +392,14 @@ const { staves = 2, center = 0.56 } = Astro.props;
         note.pulse *= 0.9;
         if (Math.abs(target - note.alpha) > 0.01 || note.pulse > 0.01) energy += 1;
       }
+      const now = performance.now();
       for (const c of chords) {
-        const target = c.lit ? 1 : 0;
+        const on = sounding(c, now);
+        const target = c.hover || on ? 1 : 0;
+        if (on) {
+          energy += 1;
+          if (!reduce) hum(c, now);
+        }
         c.h = reduce ? target : c.h + (target - c.h) * 0.25;
         c.pulse = reduce ? 0 : c.pulse * 0.88;
         if (Math.abs(target - c.h) > 0.01 || c.pulse > 0.01) energy += 1;
@@ -381,8 +422,10 @@ const { staves = 2, center = 0.56 } = Astro.props;
     };
 
     function light(c: Chord | null) {
-      for (const o of chords) o.lit = o === c;
+      for (const o of chords) o.hover = o === c;
     }
+
+    const sounding = (c: Chord, now: number) => !!c.sound && now < c.sound.until;
 
     // Sample files are fetched only once the visitor reaches the staff.
     function warm() {
@@ -447,6 +490,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
     }
 
     let tapTimer = 0;
+    let lastChord = -1e9;
     function onDown(e: PointerEvent) {
       if ((e.target as HTMLElement).closest('a, button')) return;
       const p = local(e);
@@ -455,16 +499,20 @@ const { staves = 2, center = 0.56 } = Astro.props;
       const touch = e.pointerType !== 'mouse';
       const c = chordAt(p);
       if (c) {
-        play(c.midis);
-        light(c);
-        c.pulse = 1;
+        // Ignore a second click within a moment of the last chord, so a
+        // double click or a bouncing tap starts one chord, not two.
+        const now = performance.now();
+        if (now - lastChord < 180) return;
+        lastChord = now;
+        play(c.midis, { chord: true }).then((s) => {
+          if (s) c.sound = s;
+          kick();
+        });
+        if (!touch) light(c);
+        c.pulse = reduce ? 0 : 1;
         if (note) note.visible = false;
         ripple(c.cx, tops[0] + 4 * gap, 1.2);
         ripple(c.cx, tops[1], 1.2);
-        if (touch) {
-          clearTimeout(tapTimer);
-          tapTimer = window.setTimeout(() => { light(null); kick(); }, 1500);
-        }
         return kick();
       }
       const sn = snap(p.y);
