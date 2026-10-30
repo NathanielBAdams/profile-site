@@ -1,0 +1,238 @@
+---
+// When the visitor hovers Nate in a traced photo (or taps him on a touch
+// screen), a single vermilion pen stroke circles his name and flows down to
+// him in the photo, then retracts when they move away. The name is the big
+// "Nate Adams" title on Home when it's fully on screen, otherwise the name in
+// the sticky nav. One fixed overlay serves every page and every photo.
+---
+<svg class="me-line" aria-hidden="true">
+  <path />
+  <circle r="3" />
+</svg>
+
+<style>
+  .me-line {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 30;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  path {
+    fill: none;
+    stroke: var(--verm);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  circle {
+    fill: var(--verm);
+    opacity: 0;
+  }
+</style>
+
+<script>
+  const svg = document.querySelector<SVGSVGElement>('svg.me-line')!;
+  const line = svg.querySelector('path')!;
+  const dot = svg.querySelector('circle')!;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const DRAW = 950; // ms to draw the whole stroke
+  const UNDRAW = 380; // ms to retract it
+
+  let photo: HTMLElement | null = null;
+  let p = 0; // progress 0..1
+  let dir = 0; // 1 drawing, -1 retracting
+  let last = 0;
+  let running = false;
+  let tapTimer = 0;
+
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  // The text box of an element, not its full block width.
+  function textRect(el: Element) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    return r.getBoundingClientRect();
+  }
+
+  function nameRect() {
+    const navBottom = document.querySelector('.nav')?.getBoundingClientRect().bottom ?? 0;
+    const title = document.querySelector('[data-me-name="title"]');
+    if (title) {
+      const r = textRect(title);
+      if (r.top >= navBottom && r.bottom <= window.innerHeight) return r;
+    }
+    const nav = document.querySelector('[data-me-name="nav"]');
+    return nav ? textRect(nav) : null;
+  }
+
+  // The outline's points, in photo pixels, read once per photo.
+  const outlines = new WeakMap<Element, number[][]>();
+  function outlinePoints(el: HTMLElement) {
+    let pts = outlines.get(el);
+    if (!pts) {
+      const nums = (el.querySelector('.me-shape')?.getAttribute('d') ?? '').match(/-?[\d.]+/g) ?? [];
+      pts = [];
+      for (let i = 0; i + 1 < nums.length; i += 2) pts.push([+nums[i], +nums[i + 1]]);
+      outlines.set(el, pts);
+    }
+    return pts;
+  }
+
+  // Where the stroke lands: the top of the "Me" label, or just above his
+  // head. If that's hidden under the sticky nav or off screen, it lands on
+  // the highest part of his outline that's still visible.
+  function landing(el: HTMLElement) {
+    const top = (document.querySelector('.nav')?.getBoundingClientRect().bottom ?? 0) + 8;
+    const label = el.querySelector('.me-label');
+    if (label) {
+      const r = label.getBoundingClientRect();
+      if (r.top >= top) return { x: r.left + r.width / 2, y: r.top, label: true };
+    }
+    const s = el.querySelector('svg')!;
+    const m = s.getScreenCTM();
+    if (!m) return { x: 0, y: 0, label: false };
+    const [hx, hy] = (s.dataset.top ?? '0 0').split(' ').map(Number);
+    const head = new DOMPoint(hx, hy).matrixTransform(m);
+    if (head.y - 6 >= top) return { x: head.x, y: head.y - 6, label: false };
+    const box = s.getBoundingClientRect();
+    let best: DOMPoint | null = null;
+    for (const [x, y] of outlinePoints(el)) {
+      const q = new DOMPoint(x, y).matrixTransform(m);
+      if (q.y < top || q.y > window.innerHeight || q.x < box.left || q.x > box.right) continue;
+      if (!best || q.y < best.y) best = q;
+    }
+    return best ? { x: best.x, y: best.y, label: false } : { x: head.x, y: Math.max(top, head.y), label: false };
+  }
+
+  // One continuous stroke: a slightly irregular loop around the name, a
+  // little more than a full turn, which flows into a curve down to Nate.
+  function stroke(a: DOMRect, to: { x: number; y: number }) {
+    const cx = a.left + a.width / 2;
+    const cy = a.top + a.height / 2;
+    const pad = Math.max(7, Math.min(a.height * 0.38, 22));
+    const rx = a.width / 2 + pad;
+    const ry = a.height / 2 + pad * 0.85;
+    const exit = Math.atan2((to.y - cy) / ry, (to.x - cx) / rx);
+    const start = exit + 0.45;
+    const sweep = -(2 * Math.PI + 0.55);
+    const N = 72;
+    const pts: [number, number][] = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const th = start + sweep * t;
+      const k = (0.97 + 0.07 * t) * (1 + 0.022 * Math.sin(3 * th + 1.3));
+      pts.push([cx + rx * k * Math.cos(th), cy + ry * k * Math.sin(th)]);
+    }
+    const [ex, ey] = pts[N];
+    const [px, py] = pts[N - 1];
+    const tl = Math.hypot(ex - px, ey - py) || 1;
+    const tan = [(ex - px) / tl, (ey - py) / tl];
+    const dist = Math.hypot(to.x - ex, to.y - ey);
+    const dx = (to.x - ex) / (dist || 1);
+    const dy = (to.y - ey) / (dist || 1);
+    const k1 = Math.min(220, dist * 0.35);
+    const k2 = Math.min(200, dist * 0.45);
+    // Leave the loop along its own direction, bending toward Nate; arrive
+    // from above, or from the side when he's level with the name.
+    const c1 = [ex + (tan[0] * 0.3 + dx * 0.7) * k1, ey + (tan[1] * 0.3 + dy * 0.7) * k1];
+    const ax = -dx * 0.6;
+    const ay = -0.8 * Math.max(0, dy) - 0.2;
+    const al = Math.hypot(ax, ay) || 1;
+    const c2 = [to.x + (ax / al) * k2, to.y + (ay / al) * k2];
+    // Keep the whole stroke on screen.
+    c1[1] = Math.max(4, c1[1]);
+    c2[1] = Math.max(4, c2[1]);
+    const f = (n: number) => n.toFixed(1);
+    return (
+      'M' + pts.map(([x, y]) => `${f(x)} ${f(y)}`).join(' L') +
+      ` C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(to.x)} ${f(to.y)}`
+    );
+  }
+
+  function render() {
+    if (!photo) return;
+    const a = nameRect();
+    if (!a) return;
+    const to = landing(photo);
+    line.setAttribute('d', stroke(a, to));
+    const L = line.getTotalLength();
+    const e = ease(p);
+    line.style.strokeDasharray = `${L} ${L}`;
+    line.style.strokeDashoffset = `${L * (1 - e)}`;
+    dot.setAttribute('cx', `${to.x}`);
+    dot.setAttribute('cy', `${to.y}`);
+    dot.style.opacity = !to.label && e > 0.97 ? '1' : '0';
+  }
+
+  function frame(now: number) {
+    const dt = now - last;
+    last = now;
+    if (dir > 0) p = reduce ? 1 : Math.min(1, p + dt / DRAW);
+    if (dir < 0) p = reduce ? 0 : Math.max(0, p - dt / UNDRAW);
+    render();
+    if (dir < 0 && p === 0) {
+      line.removeAttribute('d');
+      dot.style.opacity = '0';
+      photo?.classList.remove('is-active');
+      photo = null;
+      dir = 0;
+    }
+    // Keep tracking while shown, so the stroke follows scrolling.
+    if (photo) requestAnimationFrame(frame);
+    else running = false;
+  }
+
+  function go() {
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  function show(el: HTMLElement) {
+    if (photo && photo !== el) {
+      photo.classList.remove('is-active');
+      p = 0;
+    }
+    photo = el;
+    dir = 1;
+    go();
+  }
+
+  function hide() {
+    if (!photo) return;
+    dir = -1;
+    go();
+  }
+
+  const shapeOf = (t: EventTarget | null) =>
+    t instanceof Element ? t.closest<SVGPathElement>('.me-shape') : null;
+
+  document.addEventListener('pointerover', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const s = shapeOf(e.target);
+    if (s) show(s.closest<HTMLElement>('.traced')!);
+  });
+
+  document.addEventListener('pointerout', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    if (shapeOf(e.target) && !shapeOf(e.relatedTarget)) hide();
+  });
+
+  // Touch: a tap on Nate plays it and holds it for a moment.
+  document.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;
+    const s = shapeOf(e.target);
+    clearTimeout(tapTimer);
+    if (!s) return hide();
+    const el = s.closest<HTMLElement>('.traced')!;
+    el.classList.add('is-active');
+    show(el);
+    tapTimer = window.setTimeout(hide, 2800);
+  });
+</script>

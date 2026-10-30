@@ -8,7 +8,7 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
 ---
 <header class="nav">
   <div class="wrap nav-inner">
-    <a class="nav-name" href="/">Nate Adams</a>
+    <a class="nav-name" href="/" data-me-name="nav">Nate Adams</a>
     <nav class="nav-links" aria-label="Main">
       {links.map((l) => (
         <a href={l.href} aria-current={path === l.href ? 'page' : undefined}>{l.label}</a>
@@ -21,8 +21,10 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
   .nav {
     border-bottom: 1px solid var(--rule);
     background: var(--paper);
-    position: relative;
-    z-index: 2;
+    /* Stays pinned while scrolling, so the name is always on screen. */
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
 
   .nav-inner {
