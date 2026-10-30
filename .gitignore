@@ -29,3 +29,6 @@ dist-ssr
 
 # Local design mockups (not deployed)
 public/mock/
+
+# Raw voice recordings (large WAVs; the processed MP3s live in public/audio/voice)
+recordings/
