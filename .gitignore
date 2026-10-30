@@ -32,3 +32,6 @@ public/mock/
 
 # Raw voice recordings (large WAVs; the processed MP3s live in public/audio/voice)
 recordings/
+
+# Previews written by scripts/trace-person.py, for checking an outline
+src/data/outlines/*.preview.png

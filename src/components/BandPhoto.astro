@@ -1,32 +1,33 @@
 ---
-// The full-bleed ensemble photo, grayscale, with Nate marked by a faint
-// vermilion box. Hovering the box brings him back into color and shows a
-// small label. The box is placed in the photo's own coordinates, so it stays
-// on him however object-fit crops the photo at any screen size.
+// The full-bleed ensemble photo, grayscale, with Nate traced by a faint
+// vermilion silhouette. Hovering it brings him back into color, outlines him,
+// and shows a small label. The outline comes from scripts/trace-person.py and
+// lives in the photo's pixel coordinates; the SVG uses the same "cover" crop
+// as the photo (xMidYMid slice), so it stays on him at any screen size.
+import outline from '../data/outlines/choral-contracting-hero.json';
+
 interface Props { alt: string }
 const { alt } = Astro.props;
-const src = '/images/choral-contracting-hero.jpg';
+const { image: src, width: w, height: h, path, top } = outline;
+const clip = 'me-clip';
 ---
-<div class="band">
-  <img class="band-photo" src={src} alt={alt} width="2000" height="1500" />
-  <span class="me" aria-hidden="true">
-    <span class="me-window">
-      <img src={src} alt="" width="2000" height="1500" loading="lazy" decoding="async" />
-    </span>
-    <span class="me-label">Me</span>
-  </span>
+<div class="band" style={`--w: ${w}; --h: ${h}; --tx: ${top[0] / w}; --ty: ${top[1] / h};`}>
+  <img class="band-photo" src={src} alt={alt} width={w} height={h} />
+  <svg class="me" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <clipPath id={clip}><path d={path} /></clipPath>
+    </defs>
+    <image class="me-color" href={src} width={w} height={h} clip-path={`url(#${clip})`} />
+    <path class="me-shape" d={path} />
+  </svg>
+  <span class="me-label" aria-hidden="true">Me</span>
 </div>
 
 <style>
   .band {
-    /* Photo 2000 x 1500 (4:3); Nate's box in fractions of it. */
-    --fx: 0.596;
-    --fy: 0.447;
-    --fw: 0.08;
-    --fh: 0.194;
-    /* Rendered photo size and offset under object-fit: cover, centered. */
-    --iw: max(100cqw, 100cqh * 4 / 3);
-    --ih: calc(var(--iw) * 3 / 4);
+    /* Rendered photo size under object-fit: cover, for placing the label. */
+    --iw: max(100cqw, 100cqh * var(--w) / var(--h));
+    --ih: calc(var(--iw) * var(--h) / var(--w));
     position: relative;
     container-type: size;
     height: clamp(16rem, 44vw, 34rem);
@@ -39,64 +40,60 @@ const src = '/images/choral-contracting-hero.jpg';
 
   .me {
     position: absolute;
-    left: calc((100cqw - var(--iw)) / 2 + var(--iw) * var(--fx));
-    top: calc((100cqh - var(--ih)) / 2 + var(--ih) * var(--fy));
-    width: calc(var(--iw) * var(--fw));
-    height: calc(var(--ih) * var(--fh));
-    background: rgb(198 58 43 / 0.2);
-    outline: 2px solid transparent;
-    transition: background 0.3s ease, outline-color 0.3s ease;
-  }
-
-  /* The same photo in color, positioned so only Nate shows through the box. */
-  .me-window {
-    position: absolute;
     inset: 0;
-    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
   }
 
-  .me img {
-    position: absolute;
-    max-width: none;
-    width: var(--iw);
-    height: var(--ih);
-    left: calc(var(--iw) * var(--fx) * -1);
-    top: calc(var(--ih) * var(--fy) * -1);
+  .me-shape {
+    fill: rgb(198 58 43 / 0.2);
+    stroke: transparent;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    pointer-events: visiblePainted;
+    transition: fill 0.3s ease, stroke 0.3s ease;
+  }
+
+  /* The same photo in color, clipped to Nate. */
+  .me-color {
     opacity: 0;
     transition: opacity 0.3s ease;
   }
 
   .me-label {
     position: absolute;
-    left: 50%;
-    bottom: calc(100% + 0.5rem);
-    translate: -50% 0.25rem;
+    left: calc((100cqw - var(--iw)) / 2 + var(--iw) * var(--tx));
+    top: calc((100cqh - var(--ih)) / 2 + var(--ih) * var(--ty) - 0.6rem);
+    translate: -50% calc(-100% + 0.25rem);
     padding: 0.2rem 0.55rem;
     background: var(--verm);
     color: var(--paper);
     font: 600 0.85rem/1.2 var(--head);
     white-space: nowrap;
+    pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease, translate 0.3s var(--ease);
   }
 
-  .me:hover {
-    background: transparent;
-    outline-color: var(--verm);
+  .band:has(.me-shape:hover) .me-shape {
+    fill: transparent;
+    stroke: var(--verm);
   }
 
-  .me:hover img {
+  .band:has(.me-shape:hover) .me-color {
     opacity: 1;
   }
 
-  .me:hover .me-label {
+  .band:has(.me-shape:hover) .me-label {
     opacity: 1;
-    translate: -50% 0;
+    translate: -50% -100%;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .me,
-    .me img,
+    .me-shape,
+    .me-color,
     .me-label {
       transition: none;
     }
