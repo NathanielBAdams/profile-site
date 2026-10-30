@@ -5,6 +5,9 @@ import Closing from '../components/Closing.astro';
 import YouTube from '../components/YouTube.astro';
 import SoundCloud from '../components/SoundCloud.astro';
 import Linked from '../components/Linked.astro';
+import Traced from '../components/Traced.astro';
+import conductingOutline from '../data/outlines/nate-adams-conducting.json';
+import hmmOutline from '../data/outlines/his-majestys-men-chicago-2023.json';
 
 type Work = {
   title: string;
@@ -165,25 +168,11 @@ const jsonLd = {
     <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
     <div class="photos" style="--cols: 18fr 15fr">
       <figure>
-        <img
-          src="/images/nate-adams-conducting.jpg"
-          alt="Nate Adams, seen from behind, conducting a small vocal ensemble at a recording session in a Brooklyn church, with microphones on stands and an Advent wreath in the foreground"
-          width="1200"
-          height="666"
-          loading="lazy"
-          decoding="async"
-        />
+        <Traced outline={conductingOutline} alt="Nate Adams, seen from behind, conducting a small vocal ensemble at a recording session in a Brooklyn church, with microphones on stands and an Advent wreath in the foreground" />
         <figcaption>Conducting a recording session of one of my pieces, Brooklyn, 2023.</figcaption>
       </figure>
       <figure>
-        <img
-          src="/images/his-majestys-men-chicago-2023.jpg"
-          alt="Nate Adams singing with His Majesty's Men, five men in black shirts at music stands in front of a gilded church altar in Chicago, the audience in the foreground"
-          width="1200"
-          height="800"
-          loading="lazy"
-          decoding="async"
-        />
+        <Traced outline={hmmOutline} alt="Nate Adams, second from left in glasses, singing with His Majesty's Men, five men in black shirts at music stands in front of a gilded church altar in Chicago, the audience in the foreground" label />
         <figcaption>Singing with <Linked text="His Majesty's Men" />, Chicago, August 2023.</figcaption>
       </figure>
     </div>

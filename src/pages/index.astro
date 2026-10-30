@@ -2,7 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
-import BandPhoto from '../components/BandPhoto.astro';
+import Traced from '../components/Traced.astro';
+import bandOutline from '../data/outlines/choral-contracting-hero.json';
 
 const home = new URL('/', Astro.site).href;
 const jsonLd = {
@@ -63,7 +64,7 @@ const areas = [
     </div>
   </section>
 
-  <BandPhoto alt="A vocal ensemble contracted by Nate Adams in a New York recording studio. Nate is in the plaid shirt and cap, giving a thumbs up." />
+  <Traced outline={bandOutline} alt="A vocal ensemble contracted by Nate Adams in a New York recording studio. Nate is in the plaid shirt and cap, giving a thumbs up." cover label lazy={false} />
 
   <section class="wrap grid areas">
     {areas.map((a) => (
