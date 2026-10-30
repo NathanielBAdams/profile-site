@@ -444,6 +444,28 @@ const { staves = 2, center = 0.56 } = Astro.props;
       }
     }
 
+    // Links, buttons and any text marked data-staff-quiet get a margin where
+    // the staff steps aside: no half note, no sound, the normal cursor. Marked
+    // text is measured line by line, so the zone hugs the words.
+    const QUIET = 'a, button, [data-staff-quiet]';
+    const PAD = 12;
+    function quiet(e: PointerEvent) {
+      if ((e.target as HTMLElement).closest('a, button')) return true;
+      const { clientX: x, clientY: y } = e;
+      for (const el of host.querySelectorAll<HTMLElement>(QUIET)) {
+        let rects: DOMRect[] = [el.getBoundingClientRect()];
+        if (el.matches('[data-staff-quiet]')) {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          rects = [...range.getClientRects()];
+        }
+        for (const r of rects) {
+          if (x > r.left - PAD && x < r.right + PAD && y > r.top - PAD && y < r.bottom + PAD) return true;
+        }
+      }
+      return false;
+    }
+
     function onMove(e: PointerEvent) {
       const p = local(e);
       if (inZone(p.y)) warm();
@@ -462,7 +484,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
       }
       last = p;
       if (e.pointerType !== 'mouse') return kick();
-      const over = (e.target as HTMLElement).closest('a, button');
+      const over = quiet(e);
       const c = over ? null : chordAt(p);
       light(c);
       host.classList.toggle('on-chord', !!c);
@@ -492,7 +514,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
     let tapTimer = 0;
     let lastChord = -1e9;
     function onDown(e: PointerEvent) {
-      if ((e.target as HTMLElement).closest('a, button')) return;
+      if (quiet(e)) return;
       const p = local(e);
       if (!inZone(p.y)) return;
       warm();
