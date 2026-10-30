@@ -50,7 +50,9 @@ const areas = [
     <div class="wrap hero-inner">
       <h1 class="name rise">Nate Adams</h1>
       <div class="grid">
-        <p class="lead lede rise rise-2">Choral contractor, composer, and software engineer in New York City.</p>
+        <p class="lead lede rise rise-2">
+          <a class="role" href="/choral-contracting/">Choral contractor</a>, <a class="role" href="/music/">composer</a>, and <a class="role" href="/software/">software engineer</a> in New York City.
+        </p>
       </div>
       <div class="grid below">
         <p class="lead hint">Click the staff to hear a note, or click a chord.</p>
@@ -125,6 +127,27 @@ const areas = [
 
   .venue-list {
     font: 600 1.1rem/1.4 var(--head);
+  }
+
+  /* The three roles read as plain text until hovered, then grow slightly
+     and turn vermilion. */
+  .role {
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+    transform-origin: 50% 80%;
+    transition: color 0.2s ease, transform 0.2s var(--ease);
+  }
+
+  .role:hover {
+    color: var(--verm);
+    transform: scale(1.025);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .role:hover {
+      transform: none;
+    }
   }
 
   .hint {
