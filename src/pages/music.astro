@@ -106,8 +106,9 @@ const jsonLd = {
     </div>
   </section>
 
-  <section class="wrap grid">
-    <div class="lead photos">
+  <section class="wrap">
+    <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
+    <div class="photos" style="--cols: 18fr 15fr">
       <figure>
         <img
           src="/images/nate-adams-conducting.jpg"
@@ -118,6 +119,17 @@ const jsonLd = {
           decoding="async"
         />
         <figcaption>Conducting a recording session of one of my pieces, Brooklyn, 2023.</figcaption>
+      </figure>
+      <figure>
+        <img
+          src="/images/his-majestys-men-chicago-2023.jpg"
+          alt="Nate Adams singing with His Majesty's Men, five men in black shirts at music stands in front of a gilded church altar in Chicago, the audience in the foreground"
+          width="1200"
+          height="800"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption>Singing with His Majesty's Men, Chicago, August 2023.</figcaption>
       </figure>
     </div>
   </section>
