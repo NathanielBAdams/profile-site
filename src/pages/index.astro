@@ -38,12 +38,6 @@ const areas = [
     text: 'I work on front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM.',
   },
 ];
-
-const figures = [
-  { n: '2010', text: 'Contracting professional singers in New York since' },
-  { n: '3', unit: 'works', text: 'Choral pieces published by Walton Music and Gentry Publications' },
-  { n: '4', unit: 'venues', text: 'Carnegie Hall, Radio City, Madison Square Garden, Lincoln Center' },
-];
 ---
 <Layout
   title="Nate Adams | NYC Choral Contractor, Composer & Software Engineer"
@@ -75,15 +69,6 @@ const figures = [
     width="1600"
     height="900"
   />
-
-  <section class="wrap grid figures" aria-label="At a glance">
-    {figures.map((f) => (
-      <div class="figure">
-        <span class="figure-n">{f.n}{f.unit && <small>{f.unit}</small>}</span>
-        <p>{f.text}</p>
-      </div>
-    ))}
-  </section>
 
   <section class="wrap grid areas">
     {areas.map((a) => (
@@ -147,37 +132,8 @@ const figures = [
     color: var(--muted);
   }
 
-  .figures {
-    padding-top: clamp(3rem, 7vw, 5.5rem);
-    padding-bottom: clamp(3rem, 7vw, 5.5rem);
-    row-gap: 2.5rem;
-  }
-
-  .figure {
-    grid-column: 1 / -1;
-    border-top: 2px solid var(--ink);
-    padding-top: 1rem;
-  }
-
-  .figure p {
-    margin-top: 0.75rem;
-    color: var(--muted);
-    max-width: 22ch;
-  }
-
-  @media (min-width: 600px) {
-    .figure {
-      grid-column: span 6;
-    }
-  }
-
-  @media (min-width: 834px) {
-    .figure {
-      grid-column: span 4;
-    }
-  }
-
   .areas {
+    padding-top: clamp(3rem, 7vw, 5.5rem);
     row-gap: 3rem;
   }
 
