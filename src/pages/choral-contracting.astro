@@ -31,7 +31,19 @@ const jsonLd = {
   },
 };
 
-const collaborators = ['Madonna', 'Hans Zimmer', 'Jackie Chan', 'Vampire Weekend'];
+// A credit with `shows` points to the photo whose data-photo includes that id
+// (hover draws a line to it). If no such photo is on the page, nothing happens.
+const collaborators = [
+  { name: 'Madonna' },
+  { name: 'Hans Zimmer', shows: 'hans-zimmer' },
+  { name: 'Jackie Chan' },
+  { name: 'Vampire Weekend', shows: 'vampire-weekend' },
+];
+const shows: Record<string, string> = {
+  'Carnegie Hall': 'carnegie-hall',
+  'Radio City Music Hall': 'radio-city',
+  'The Tonight Show Starring Jimmy Fallon': 'tonight-show',
+};
 const venues = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall', 'Lincoln Center'];
 const media = ['The Tonight Show Starring Jimmy Fallon', 'The Daily Show'];
 const clients = ['NBC Universal', 'Accenture', 'Sundance Film Festival'];
@@ -79,11 +91,11 @@ const credits = [
   <section class="wrap block" aria-labelledby="worked-with">
     <h2 id="worked-with" class="origin h2">Worked with</h2>
     <ul class="names">
-      {collaborators.map((n) => <li>{n}</li>)}
+      {collaborators.map((c) => <li data-shows={c.shows}>{c.name}</li>)}
     </ul>
     <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
     <div class="photos" style="--cols: 9fr 9fr 16fr">
-      <figure>
+      <figure data-photo="hans-zimmer">
         <Traced outline={zimmerOutline} alt="Nate Adams, right, in glasses, and Hans Zimmer taking a selfie in a hallway at Radio City Music Hall" />
         <figcaption>
           With Hans Zimmer at Radio City Music Hall, July 2017. I contracted the choir for his two
@@ -94,15 +106,17 @@ const credits = [
         <Traced outline={singersOutline} alt="Nate Adams, center, and fellow singers in black, wearing headset microphones, seated together for the Hans Zimmer concerts" label />
         <figcaption>Some of the singers on those concerts, me among them.</figcaption>
       </figure>
-      <figure>
-        <img
-          src="/images/radio-city-hans-zimmer-2017.jpg"
-          alt="The Radio City Music Hall marquee at night, announcing Hans Zimmer on July 25 and 26"
-          width="960"
-          height="720"
-          loading="lazy"
-          decoding="async"
-        />
+      <figure data-photo="radio-city">
+        <div class="photo-frame">
+          <img
+            src="/images/radio-city-hans-zimmer-2017.jpg"
+            alt="The Radio City Music Hall marquee at night, announcing Hans Zimmer on July 25 and 26"
+            width="960"
+            height="720"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
         <figcaption>The marquee for the two nights, July 25 and 26.</figcaption>
       </figure>
     </div>
@@ -116,22 +130,24 @@ const credits = [
           <tr><th scope="col">Type</th><th scope="col">Name</th></tr>
         </thead>
         <tbody>
-          {credits.map((c) => <tr><td>{c.type}</td><td>{c.name}</td></tr>)}
+          {credits.map((c) => <tr data-shows={shows[c.name]}><td>{c.type}</td><td data-shows-text>{c.name}</td></tr>)}
         </tbody>
       </table>
       <div class="photos" style="--cols: 9fr 12fr">
-        <figure>
-          <img
-            src="/images/carnegie-hall-stage.jpg"
-            alt="View from the chorus seats on the Carnegie Hall stage during a Final Fantasy concert: the orchestra, a full house, and the lit tiers and ceiling above"
-            width="800"
-            height="1422"
-            loading="lazy"
-            decoding="async"
-          />
+        <figure data-photo="carnegie-hall">
+          <div class="photo-frame">
+            <img
+              src="/images/carnegie-hall-stage.jpg"
+              alt="View from the chorus seats on the Carnegie Hall stage during a Final Fantasy concert: the orchestra, a full house, and the lit tiers and ceiling above"
+              width="800"
+              height="1422"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
           <figcaption>Final Fantasy at Carnegie Hall. I contracted the choir and sang in it.</figcaption>
         </figure>
-        <figure>
+        <figure data-photo="tonight-show vampire-weekend">
           <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
           <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
         </figure>
@@ -141,7 +157,7 @@ const credits = [
       <h2 class="origin h2">Selected work</h2>
       <ul class="list">
         <li>Sang with the Clarion Music Society at the 2018 Met Gala, performing with Madonna</li>
-        <li>Sang backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon</li>
+        <li data-shows="vampire-weekend">Sang backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon</li>
         <li>Regular concerts with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
         <li>Music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
       </ul>

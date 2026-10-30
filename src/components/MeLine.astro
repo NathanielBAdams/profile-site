@@ -1,9 +1,13 @@
 ---
-// When the visitor hovers Nate in a traced photo (or taps him on a touch
-// screen), a single vermilion pen stroke circles his name and flows down to
-// him in the photo, then retracts when they move away. The name is the big
-// "Nate Adams" title on Home when it's fully on screen, otherwise the name in
-// the sticky nav. One fixed overlay serves every page and every photo.
+// A single vermilion pen stroke that circles some text and flows to a photo,
+// then retracts. Two uses, on every page:
+// - Hover (or tap) Nate in a traced photo: it circles his name (the big Home
+//   title when it's on screen, otherwise the name in the sticky nav) and
+//   lands on him.
+// - Hover (or tap) a credit marked data-shows="<id>": it circles the credit
+//   and lands on the photo marked data-photo="<id>", which gets a vermilion
+//   frame. Credits whose photo isn't on the page do nothing, so photos can
+//   be added, swapped or removed by changing those attributes alone.
 ---
 <svg class="me-line" aria-hidden="true">
   <path />
@@ -33,6 +37,29 @@
     fill: var(--verm);
     opacity: 0;
   }
+
+  /* A photo a credit is pointing at gets a thin vermilion frame. */
+  /* On the photo's wrapper, not the image, so the grayscale filter on the
+     image doesn't gray out the frame. */
+  :global([data-photo] > :first-child) {
+    outline: 1.5px solid transparent;
+    outline-offset: 5px;
+    transition: outline-color 0.3s ease;
+  }
+
+  :global([data-photo].is-linked > :first-child) {
+    outline-color: var(--verm);
+  }
+
+  /* Credits with a photo on the page turn vermilion while pointed at it. */
+  :global(.shows-photo) {
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  :global(.shows-photo:hover) {
+    color: var(--verm);
+  }
 </style>
 
 <script>
@@ -43,12 +70,21 @@
   const DRAW = 950; // ms to draw the whole stroke
   const UNDRAW = 380; // ms to retract it
 
-  let photo: HTMLElement | null = null;
+  type Point = { x: number; y: number; label: boolean };
+  type Link = {
+    key: Element; // what was hovered
+    from: () => DOMRect | null; // the text to circle
+    to: () => Point; // where the stroke lands
+    mark: HTMLElement; // gets a class while the link is shown
+    cls: string;
+  };
+  let link: Link | null = null;
   let p = 0; // progress 0..1
   let dir = 0; // 1 drawing, -1 retracting
   let last = 0;
   let running = false;
   let tapTimer = 0;
+  let pinnedUntil = 0; // after a click, keep the link through the scroll
 
   const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -109,6 +145,27 @@
     return best ? { x: best.x, y: best.y, label: false } : { x: head.x, y: Math.max(top, head.y), label: false };
   }
 
+  // A credit's stroke lands on the nearest edge of its photo. If the photo
+  // is above or below the screen, the stroke runs off that edge toward it.
+  function edge(el: HTMLElement, from: DOMRect | null): Point {
+    const r = (el.querySelector('img') ?? el).getBoundingClientRect();
+    const top = (document.querySelector('.nav')?.getBoundingClientRect().bottom ?? 0) + 8;
+    const fy = from ? from.top + from.height / 2 : 0;
+    const fx = from ? from.left + from.width / 2 : 0;
+    let x = r.left + r.width / 2;
+    let y = r.top;
+    if (fy > r.bottom) y = r.bottom;
+    else if (fy >= r.top) {
+      x = fx < r.left ? r.left : r.right;
+      y = r.top + r.height / 2;
+    }
+    x = Math.min(Math.max(x, r.left), r.right);
+    if (r.top > window.innerHeight - 24) return { x, y: window.innerHeight + 40, label: true };
+    if (r.bottom < top + 24) return { x, y: top - 40, label: true };
+    y = Math.min(Math.max(y, Math.max(top, r.top)), Math.min(window.innerHeight - 8, r.bottom));
+    return { x, y, label: false };
+  }
+
   // One continuous stroke: a slightly irregular loop around the name, a
   // little more than a full turn, which flows into a curve down to Nate.
   function stroke(a: DOMRect, to: { x: number; y: number }) {
@@ -137,11 +194,12 @@
     const dy = (to.y - ey) / (dist || 1);
     const k1 = Math.min(220, dist * 0.35);
     const k2 = Math.min(200, dist * 0.45);
-    // Leave the loop along its own direction, bending toward Nate; arrive
-    // from above, or from the side when he's level with the name.
+    // Leave the loop along its own direction, bending toward the target;
+    // arrive from above (or below, when the target is higher), or from the
+    // side when it's level with the text.
     const c1 = [ex + (tan[0] * 0.3 + dx * 0.7) * k1, ey + (tan[1] * 0.3 + dy * 0.7) * k1];
     const ax = -dx * 0.6;
-    const ay = -0.8 * Math.max(0, dy) - 0.2;
+    const ay = dy >= 0 ? -0.8 * dy - 0.2 : -0.8 * dy + 0.2;
     const al = Math.hypot(ax, ay) || 1;
     const c2 = [to.x + (ax / al) * k2, to.y + (ay / al) * k2];
     // Keep the whole stroke on screen.
@@ -155,10 +213,10 @@
   }
 
   function render() {
-    if (!photo) return;
-    const a = nameRect();
+    if (!link) return;
+    const a = link.from();
     if (!a) return;
-    const to = landing(photo);
+    const to = link.to();
     line.setAttribute('d', stroke(a, to));
     const L = line.getTotalLength();
     const e = ease(p);
@@ -178,12 +236,12 @@
     if (dir < 0 && p === 0) {
       line.removeAttribute('d');
       dot.style.opacity = '0';
-      photo?.classList.remove('is-active');
-      photo = null;
+      link?.mark.classList.remove(link.cls);
+      link = null;
       dir = 0;
     }
     // Keep tracking while shown, so the stroke follows scrolling.
-    if (photo) requestAnimationFrame(frame);
+    if (link) requestAnimationFrame(frame);
     else running = false;
   }
 
@@ -194,45 +252,92 @@
     requestAnimationFrame(frame);
   }
 
-  function show(el: HTMLElement) {
-    if (photo && photo !== el) {
-      photo.classList.remove('is-active');
+  function show(next: Link) {
+    if (link && link.key !== next.key) {
+      link.mark.classList.remove(link.cls);
       p = 0;
     }
-    photo = el;
+    link = next;
+    link.mark.classList.add(link.cls);
     dir = 1;
     go();
   }
 
   function hide() {
-    if (!photo) return;
+    if (!link) return;
     dir = -1;
     go();
   }
 
+  // Nate in a photo: circle his name, land on him. The hover reveal is CSS;
+  // is-active does the same for a tap.
+  function meLink(shape: Element, touch: boolean): Link {
+    const el = shape.closest<HTMLElement>('.traced')!;
+    return { key: el, from: nameRect, to: () => landing(el), mark: el, cls: touch ? 'is-active' : 'is-hovered' };
+  }
+
+  // A credit: circle it, land on its photo, frame the photo.
+  const photoFor = (id: string) => document.querySelector<HTMLElement>(`[data-photo~="${CSS.escape(id)}"]`);
+  function creditLink(el: HTMLElement): Link | null {
+    const target = photoFor(el.dataset.shows ?? '');
+    if (!target) return null;
+    const text = el.querySelector('[data-shows-text]') ?? el;
+    const from = () => textRect(text);
+    return { key: el, from, to: () => edge(target, from()), mark: target, cls: 'is-linked' };
+  }
+
+  // Mark the credits that have a photo on this page, so only they respond.
+  document.querySelectorAll<HTMLElement>('[data-shows]').forEach((el) => {
+    if (photoFor(el.dataset.shows ?? '')) el.classList.add('shows-photo');
+  });
+
   const shapeOf = (t: EventTarget | null) =>
     t instanceof Element ? t.closest<SVGPathElement>('.me-shape') : null;
+  const creditOf = (t: EventTarget | null) =>
+    t instanceof Element ? t.closest<HTMLElement>('.shows-photo') : null;
+  const linkFor = (t: EventTarget | null, touch: boolean) => {
+    const s = shapeOf(t);
+    if (s) return meLink(s, touch);
+    const c = creditOf(t);
+    return c ? creditLink(c) : null;
+  };
 
   document.addEventListener('pointerover', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    const s = shapeOf(e.target);
-    if (s) show(s.closest<HTMLElement>('.traced')!);
+    if (e.pointerType !== 'mouse' || performance.now() < pinnedUntil) return;
+    const next = linkFor(e.target, false);
+    if (next) show(next);
   });
 
   document.addEventListener('pointerout', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    if (shapeOf(e.target) && !shapeOf(e.relatedTarget)) hide();
+    if (e.pointerType !== 'mouse' || !link || performance.now() < pinnedUntil) return;
+    const from = shapeOf(e.target) ?? creditOf(e.target);
+    const to = shapeOf(e.relatedTarget) ?? creditOf(e.relatedTarget);
+    if (from && from !== to) hide();
   });
 
-  // Touch: a tap on Nate plays it and holds it for a moment.
+  // Clicking a credit brings its photo into view; the line follows it there.
+  document.addEventListener('click', (e) => {
+    const c = creditOf(e.target);
+    if (!c) return;
+    const next = creditLink(c);
+    if (!next) return;
+    show(next);
+    next.mark.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    pinnedUntil = performance.now() + 2600;
+    clearTimeout(tapTimer);
+    tapTimer = window.setTimeout(() => {
+      pinnedUntil = 0;
+      if (!c.matches(':hover')) hide();
+    }, 2600);
+  });
+
+  // Touch: a tap plays it and holds it for a moment.
   document.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse') return;
-    const s = shapeOf(e.target);
     clearTimeout(tapTimer);
-    if (!s) return hide();
-    const el = s.closest<HTMLElement>('.traced')!;
-    el.classList.add('is-active');
-    show(el);
+    const next = linkFor(e.target, true);
+    if (!next) return hide();
+    show(next);
     tapTimer = window.setTimeout(hide, 2800);
   });
 </script>

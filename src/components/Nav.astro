@@ -13,6 +13,7 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
       {links.map((l) => (
         <a href={l.href} aria-current={path === l.href ? 'page' : undefined}>{l.label}</a>
       ))}
+      <span class="nav-bar" aria-hidden="true"></span>
     </nav>
   </div>
 </header>
@@ -81,4 +82,80 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
   .nav-links a[aria-current='page']::after {
     transform: scaleX(1);
   }
+
+  /* With JavaScript, one underline glides between links instead: to the
+     hovered or focused link, and back to the current page on leave. */
+  .nav-links {
+    position: relative;
+  }
+
+  .nav-links.sliding a::after {
+    display: none;
+  }
+
+  .nav-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 2px;
+    width: 0;
+    background: var(--verm);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .nav-links.ready .nav-bar {
+    transition:
+      transform 0.45s var(--ease),
+      width 0.45s var(--ease),
+      opacity 0.25s ease;
+  }
 </style>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('.nav-links');
+  const bar = nav?.querySelector<HTMLElement>('.nav-bar');
+  if (nav && bar) {
+    const links = [...nav.querySelectorAll<HTMLAnchorElement>('a')];
+    const current = links.find((a) => a.getAttribute('aria-current') === 'page') ?? null;
+    let shown = false;
+
+    const place = (a: HTMLAnchorElement | null) => {
+      if (!a) {
+        bar.style.opacity = '0';
+        shown = false;
+        return;
+      }
+      // Appearing from nothing: jump into place, then fade in, so it never
+      // slides in from the left edge.
+      if (!shown) nav.classList.remove('ready');
+      const y = a.offsetTop + a.offsetHeight + a.offsetHeight * 0.18;
+      bar.style.transform = `translate(${a.offsetLeft}px, ${y}px)`;
+      bar.style.width = `${a.offsetWidth}px`;
+      if (!shown) {
+        void bar.offsetWidth;
+        nav.classList.add('ready');
+      }
+      bar.style.opacity = '1';
+      shown = true;
+    };
+
+    nav.classList.add('sliding');
+    place(current);
+    for (const a of links) {
+      a.addEventListener('pointerenter', () => place(a));
+      a.addEventListener('focus', () => place(a));
+      a.addEventListener('blur', () => place(current));
+    }
+    nav.addEventListener('pointerleave', () => place(current));
+    // Re-measure when the web fonts arrive or the nav reflows (link widths
+    // change), jumping rather than gliding.
+    const settle = () => {
+      if (nav.matches(':hover') || nav.contains(document.activeElement)) return;
+      shown = false;
+      place(current);
+    };
+    document.fonts?.ready.then(settle);
+    new ResizeObserver(settle).observe(nav);
+  }
+</script>
