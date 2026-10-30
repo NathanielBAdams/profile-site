@@ -145,9 +145,8 @@ img {
 
 .header-inner {
   position: relative;
-  padding-top: clamp(3rem, 8vw, 6rem);
-  /* leaves a lane under the text for the staff */
-  padding-bottom: clamp(7rem, 12vw, 9rem);
+  padding-top: clamp(3.5rem, 9vw, 7rem);
+  padding-bottom: clamp(3rem, 6vw, 4.5rem);
 }
 
 .display {
