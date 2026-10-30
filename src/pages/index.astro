@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
+import BandPhoto from '../components/BandPhoto.astro';
 
 const home = new URL('/', Astro.site).href;
 const jsonLd = {
@@ -62,13 +63,7 @@ const areas = [
     </div>
   </section>
 
-  <img
-    class="band-photo"
-    src="/images/choral-contracting-hero.jpg"
-    alt="A vocal ensemble contracted by Nate Adams in a New York recording studio"
-    width="1600"
-    height="900"
-  />
+  <BandPhoto alt="A vocal ensemble contracted by Nate Adams in a New York recording studio. Nate is in the plaid shirt and cap, giving a thumbs up." />
 
   <section class="wrap grid areas">
     {areas.map((a) => (

@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
+import BandPhoto from '../components/BandPhoto.astro';
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -56,13 +57,7 @@ const credits = [
     </div>
   </section>
 
-  <img
-    class="band-photo"
-    src="/images/choral-contracting-hero.jpg"
-    alt="Nate Adams with a vocal ensemble during a professional recording session in New York City"
-    width="1600"
-    height="900"
-  />
+  <BandPhoto alt="Nate Adams with a vocal ensemble during a professional recording session in New York City. Nate is in the plaid shirt and cap, giving a thumbs up." />
 
   <section class="wrap grid block">
     <div class="lead">
