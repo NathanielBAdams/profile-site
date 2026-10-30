@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Frame from '../components/Frame.astro';
+import Staff from '../components/Staff.astro';
+import Closing from '../components/Closing.astro';
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -31,6 +32,11 @@ const media = ['The Tonight Show Starring Jimmy Fallon', 'The Daily Show'];
 const clients = ['NBC Universal', 'Accenture', 'Sundance Film Festival'];
 const mailto = 'mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry';
 const dev = import.meta.env.DEV;
+const credits = [
+  ...venues.map((name) => ({ type: 'Venue', name })),
+  ...media.map((name) => ({ type: 'Television', name })),
+  ...clients.map((name) => ({ type: 'Client', name })),
+];
 ---
 <Layout
   title="NYC Choral Contractor | Nate Adams"
@@ -38,134 +44,117 @@ const dev = import.meta.env.DEV;
   image="/images/choral-contracting-hero.jpg"
   jsonLd={jsonLd}
 >
-  <section class="page header">
-    <h1 class="display">NYC choral contractor</h1>
-    <p class="lede">
-      I hire and coordinate professional singers for television tapings, concerts, and events
-      across New York City, from a quartet to a full chorus.
-    </p>
-    <a class="button" href={mailto}>Email about your project</a>
+  <section class="header">
+    <Staff staves={1} center={0.86} />
+    <div class="wrap header-inner">
+      <h1 class="display origin rise">NYC choral contractor</h1>
+      <p class="lede rise rise-2">
+        I hire and coordinate professional singers for television tapings, concerts, and events
+        across New York City, from a quartet to a full chorus.
+      </p>
+      <a class="btn rise rise-3" href={mailto}>Email about your project</a>
+    </div>
   </section>
 
-  <div class="page">
-    <Frame>
-      <img
-        class="hero-image"
-        src="/images/choral-contracting-hero.jpg"
-        alt="Nate Adams with a vocal ensemble during a professional recording session in New York City"
-        width="1600"
-        height="900"
-      />
-    </Frame>
-  </div>
+  <img
+    class="band-photo"
+    src="/images/choral-contracting-hero.jpg"
+    alt="Nate Adams with a vocal ensemble during a professional recording session in New York City"
+    width="1600"
+    height="900"
+  />
 
-  <section class="page since">
-    <p>
-      Since 2010 I have contracted vocal ensembles for national television, corporate events, and
-      major concert engagements, working closely with producers and music directors to staff the
-      right singers for every room and every score.
-    </p>
+  <section class="wrap grid block">
+    <div class="lead">
+      <p class="prose">
+        Since 2010 I have contracted vocal ensembles for national television, corporate events, and
+        major concert engagements, working closely with producers and music directors to staff the
+        right singers for every room and every score.
+      </p>
+    </div>
+    <div class="rail since">
+      <p class="label">Contracting since</p>
+      <span class="figure-n">2010</span>
+    </div>
   </section>
 
-  <section class="page worked" aria-labelledby="worked-with">
-    <h2 id="worked-with" class="muted worked-label">Worked with</h2>
+  <section class="wrap block" aria-labelledby="worked-with">
+    <h2 id="worked-with" class="origin h2">Worked with</h2>
     <ul class="names">
       {collaborators.map((n) => <li>{n}</li>)}
     </ul>
   </section>
 
-  <section class="page rows">
-    <div class="row">
-      <h2 class="row-label">Venues</h2>
-      <div class="row-body"><ul>{venues.map((v) => <li>{v}</li>)}</ul></div>
+  <section class="wrap grid block">
+    <div class="lead">
+      <h2 class="origin h2">Credits</h2>
+      <table class="table">
+        <thead>
+          <tr><th scope="col">Type</th><th scope="col">Name</th></tr>
+        </thead>
+        <tbody>
+          {credits.map((c) => <tr><td>{c.type}</td><td>{c.name}</td></tr>)}
+        </tbody>
+      </table>
     </div>
-    <div class="row">
-      <h2 class="row-label">Television</h2>
-      <div class="row-body"><ul>{media.map((m) => <li>{m}</li>)}</ul></div>
+    <div class="rail highlights">
+      <h2 class="origin h2">Highlights</h2>
+      <ul class="list">
+        <li>Performed at the 2018 Met Gala alongside Madonna, with the Clarion Music Society</li>
+        <li>Regular concert performances with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
+        <li>Provided music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
+      </ul>
     </div>
-    <div class="row">
-      <h2 class="row-label">Clients</h2>
-      <div class="row-body"><ul>{clients.map((c) => <li>{c}</li>)}</ul></div>
-    </div>
-    <div class="row">
-      <h2 class="row-label">Highlights</h2>
-      <div class="row-body">
-        <ul>
-          <li>Performed at the 2018 Met Gala alongside Madonna, with the Clarion Music Society</li>
-          <li>Regular concert performances with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
-          <li>Provided music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
-        </ul>
-      </div>
-    </div>
-    {dev && (
-      <div class="row">
-        <h2 class="row-label">Projects</h2>
-        <div class="row-body placeholder">
-          3 or 4 short write-ups go here (event, venue, year, ensemble size), then a short FAQ.
-          Only visible in local dev.
-        </div>
-      </div>
-    )}
   </section>
 
-  <section class="page closing">
-    <h2 class="closing-title">Planning a taping, concert, or event?</h2>
-    <p>Tell me the date, the venue, and the music, and I will put together the right singers.</p>
-    <a class="button" href={mailto}>Email nathanielbadams@gmail.com</a>
-  </section>
+  {dev && (
+    <section class="wrap block">
+      <div class="placeholder">
+        Projects go here: 3 or 4 short write-ups (event, venue, year, ensemble size), then a short FAQ.
+        Only visible in local dev.
+      </div>
+    </section>
+  )}
+
+  <Closing
+    title="Planning a taping, concert, or event?"
+    text="Tell me the date, the venue, and the music, and I will put together the right singers."
+    href={mailto}
+  />
 </Layout>
 
 <style>
-  .hero-image {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-  }
-
   .since {
-    padding-top: clamp(2.5rem, 6vw, 4rem);
+    margin-top: 2.5rem;
   }
 
-  .since p {
-    max-width: var(--measure);
-    font-size: clamp(1.1rem, 1.8vw, 1.25rem);
-    line-height: 1.5;
-  }
-
-  .worked {
-    padding-top: clamp(3rem, 7vw, 5rem);
-  }
-
-  .worked-label {
-    font-size: 1rem;
-    font-weight: 400;
-    letter-spacing: 0;
-    margin-bottom: 0.75rem;
+  @media (min-width: 834px) {
+    .since {
+      margin-top: 0;
+    }
   }
 
   .names {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    column-gap: 0.28em;
-    font-size: clamp(2.4rem, 7vw, 5rem);
-    font-stretch: 78%;
-    font-weight: 500;
+    font: 800 clamp(2.4rem, 6.5vw, 5.4rem)/0.98 var(--head);
     letter-spacing: -0.03em;
-    line-height: 1;
   }
 
-  .names li:not(:last-child)::after {
-    content: ',';
-    color: var(--slate);
+  .highlights {
+    margin-top: 3rem;
+  }
+
+  @media (min-width: 834px) {
+    .highlights {
+      margin-top: 0;
+    }
   }
 
   .placeholder {
-    border: 1px dashed var(--steel);
-    color: var(--steel);
-    padding: 1rem;
+    border: 1px dashed var(--verm);
+    color: var(--verm);
+    padding: 1.25rem;
   }
 </style>

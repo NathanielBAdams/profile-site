@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Frame from '../components/Frame.astro';
+import Staff from '../components/Staff.astro';
+import Closing from '../components/Closing.astro';
 import YouTube from '../components/YouTube.astro';
 
 type Work = {
@@ -64,62 +65,94 @@ const jsonLd = {
   description="Choral music by NYC composer Nathaniel Adams, published by Walton Music and Gentry Publications: He Came All So Still (SATB), Lux Brumalis (SATB and piano), and Black Is the Color (SSAA)."
   jsonLd={jsonLd}
 >
-  <section class="page header">
-    <h1 class="display">Music</h1>
-    <p class="lede">
-      I write music for choirs and voices. I also sing professionally, including regular
-      concert performances at Lincoln Center and Carnegie Hall.
-    </p>
+  <section class="header">
+    <Staff staves={1} center={0.86} />
+    <div class="wrap header-inner">
+      <h1 class="display origin rise">Music</h1>
+      <p class="lede rise rise-2">
+        I write music for choirs and voices. I also sing professionally, including regular concert
+        performances at Lincoln Center and Carnegie Hall.
+      </p>
+    </div>
   </section>
 
-  <section class="page rows" aria-label="Published works">
-    {works.map((w) => (
-      <article class="row">
-        <h2 class="row-label">
-          {w.title}
-          {w.subtitle && <span class="row-sub">{w.subtitle}</span>}
-        </h2>
-        <div class="row-body">
-          <p class="muted">{w.voicing}. {w.publisher}{w.catalog && `, ${w.catalog}`}.</p>
-          <p>{w.details}</p>
-          <p class="links">
-            <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>
-            {w.videoUrl && <a href={w.videoUrl} target="_blank" rel="noopener noreferrer">Watch a performance</a>}
-          </p>
-        </div>
-      </article>
-    ))}
+  <section class="wrap block" aria-labelledby="works">
+    <h2 id="works" class="origin h2">Published works</h2>
+    <div class="works">
+      {works.map((w) => (
+        <article class="grid work">
+          <div class="lead">
+            <h3 class="work-title">{w.title}</h3>
+            {w.subtitle && <p class="work-sub">{w.subtitle}</p>}
+            <p class="work-details">{w.details}</p>
+          </div>
+          <div class="rail work-meta">
+            <p>{w.voicing}</p>
+            <p class="muted">{w.publisher}{w.catalog && `, ${w.catalog}`}</p>
+            <p class="links">
+              <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>
+              {w.videoUrl && <a href="#performance">Watch a performance</a>}
+            </p>
+          </div>
+        </article>
+      ))}
+    </div>
   </section>
 
-  <section class="page video">
-    <Frame>
+  <section class="wrap block" id="performance" aria-labelledby="perf-title">
+    <h2 id="perf-title" class="origin h2">Lux Brumalis, performed by the Missouri State Chorale</h2>
+    <div class="video">
       <YouTube id="8FUHC_xR0aM" title="Lux Brumalis, performed by the Missouri State Chorale" />
-    </Frame>
-    <p class="video-caption">Lux Brumalis, performed by the Missouri State Chorale</p>
+    </div>
   </section>
 
-  <section class="page closing">
-    <h2 class="closing-title">Commissions and perusal scores</h2>
-    <p>
-      For new work, perusal copies, or performance questions, email me.
-      More recordings are on <a href="https://soundcloud.com/nathanielbadams" target="_blank" rel="noopener noreferrer">SoundCloud</a>.
-    </p>
-    <a class="button" href="mailto:nathanielbadams@gmail.com?subject=Music%20inquiry">Email nathanielbadams@gmail.com</a>
-  </section>
+  <Closing
+    title="Commissions and perusal scores"
+    text="For new work, perusal copies, or performance questions, email me. More recordings are on SoundCloud."
+    href="mailto:nathanielbadams@gmail.com?subject=Music%20inquiry"
+  />
 </Layout>
 
 <style>
-  .video {
-    padding-bottom: clamp(3rem, 7vw, 5rem);
+  .work {
+    border-top: 2px solid var(--ink);
+    padding: 1.4rem 0 2.25rem;
+    row-gap: 1.25rem;
   }
 
-  .video :global(.frame) {
-    width: min(44rem, 100%);
+  .work:last-child {
+    border-bottom: 1px solid var(--rule);
   }
 
-  .video-caption {
+  .work-title {
+    font-size: clamp(2rem, 4.4vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+
+  .work-sub {
+    margin-top: 0.4rem;
+    font: 400 1.25rem/1.3 var(--head);
+    color: var(--muted);
+  }
+
+  .work-details {
+    margin-top: 1rem;
+    max-width: 34rem;
+  }
+
+  .work-meta {
+    display: grid;
+    gap: 0.3rem;
+    align-content: start;
+  }
+
+  .work-meta .links {
     margin-top: 0.6rem;
-    color: var(--slate);
-    font-size: 0.94rem;
+  }
+
+  .video {
+    max-width: 56rem;
   }
 </style>

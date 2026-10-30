@@ -1,5 +1,5 @@
 ---
-import Navbar from '../components/Navbar';
+import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
 
@@ -20,12 +20,8 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f4f0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script is:inline>
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.documentElement.classList.add('motion');
-      }
-    </script>
     <link rel="canonical" href={canonicalURL} />
 
     <title>{title}</title>
@@ -42,13 +38,12 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
     <meta name="twitter:description" content={description} />
     {ogImageURL && <meta name="twitter:image" content={ogImageURL} />}
 
-
     {jsonLd && (
       <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
     )}
   </head>
   <body>
-    <Navbar currentPath={Astro.url.pathname} client:load />
+    <Nav />
     <main>
       <slot />
     </main>

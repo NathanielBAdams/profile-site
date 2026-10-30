@@ -1,0 +1,43 @@
+---
+// The single graphite band that closes a page.
+interface Props {
+  title: string;
+  text: string;
+  href: string;
+  cta?: string;
+}
+const { title, text, href, cta = 'Email nathanielbadams@gmail.com' } = Astro.props;
+---
+<section class="closing">
+  <div class="wrap closing-inner">
+    <h2>{title}</h2>
+    <p>{text}</p>
+    <a class="btn" href={href}>{cta}</a>
+  </div>
+</section>
+
+<style>
+  .closing {
+    background: var(--ink);
+    color: var(--sheet);
+    margin-top: clamp(4rem, 9vw, 7rem);
+  }
+
+  .closing-inner {
+    padding-top: clamp(3.5rem, 8vw, 6rem);
+    padding-bottom: clamp(3.5rem, 8vw, 6rem);
+  }
+
+  h2 {
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    max-width: 16ch;
+  }
+
+  p {
+    margin-top: 1rem;
+    color: var(--band-text);
+    max-width: 36rem;
+  }
+</style>

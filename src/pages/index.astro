@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Frame from '../components/Frame.astro';
-import Instrument from '../components/Instrument.astro';
+import Staff from '../components/Staff.astro';
+import Closing from '../components/Closing.astro';
 
 const home = new URL('/', Astro.site).href;
 const jsonLd = {
@@ -22,18 +22,27 @@ const areas = [
   {
     title: 'Choral contracting',
     href: '/choral-contracting/',
-    text: 'I hire and coordinate professional singers for television tapings, concerts, and events at Carnegie Hall, Radio City Music Hall, and Madison Square Garden.',
+    link: 'Credits and booking',
+    text: 'I hire and coordinate professional singers for television tapings, concerts, and events, from a quartet to a full chorus.',
   },
   {
     title: 'Music',
     href: '/music/',
-    text: 'I write choral music, published by Walton Music and Gentry Publications, and sing professionally in New York.',
+    link: 'Published works',
+    text: 'I write choral music, including Lux Brumalis and He Came All So Still, and sing professionally in New York.',
   },
   {
     title: 'Software',
     href: '/software/',
+    link: 'More about my work',
     text: 'I work on front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM.',
   },
+];
+
+const figures = [
+  { n: '2010', text: 'Contracting professional singers in New York since' },
+  { n: '3', unit: 'works', text: 'Choral pieces published by Walton Music and Gentry Publications' },
+  { n: '4', unit: 'venues', text: 'Carnegie Hall, Radio City, Madison Square Garden, Lincoln Center' },
 ];
 ---
 <Layout
@@ -42,167 +51,141 @@ const areas = [
   image="/images/profile-photo.jpg"
   jsonLd={jsonLd}
 >
-  <section class="page hero">
-    <Instrument class="rings" tuner />
-    <div class="hero-text">
-      <h1 class="name">Nate Adams</h1>
-      <p class="role">Choral contractor, composer, and software engineer in New York City.</p>
-    </div>
-    <div class="hero-side">
-      <Frame class="portrait">
-        <img src="/images/profile-photo.jpg" alt="Portrait of Nate Adams" width="320" height="320" />
-      </Frame>
+  <section class="hero">
+    <Staff />
+    <div class="wrap hero-inner">
+      <h1 class="name rise">Nate Adams</h1>
+      <div class="grid">
+        <p class="lead lede rise rise-2">Choral contractor, composer, and software engineer in New York City.</p>
+        <div class="rail venues rise rise-3">
+          <p class="label">Choirs contracted for</p>
+          <p class="venue-list">Carnegie Hall, Radio City Music Hall, Madison Square Garden, Lincoln Center</p>
+        </div>
+      </div>
+      <p class="hint">Click the staff to hear a note.</p>
     </div>
   </section>
 
-  <section class="page areas" aria-label="What I do">
-    {areas.map((a) => (
-      <a class="area" href={a.href}>
-        <h2 class="area-title">{a.title}</h2>
-        <p class="area-text">{a.text}</p>
-      </a>
+  <img
+    class="band-photo"
+    src="/images/choral-contracting-hero.jpg"
+    alt="A vocal ensemble contracted by Nate Adams in a New York recording studio"
+    width="1600"
+    height="900"
+  />
+
+  <section class="wrap grid figures" aria-label="At a glance">
+    {figures.map((f) => (
+      <div class="figure">
+        <span class="figure-n">{f.n}{f.unit && <small>{f.unit}</small>}</span>
+        <p>{f.text}</p>
+      </div>
     ))}
   </section>
+
+  <section class="wrap grid areas">
+    {areas.map((a) => (
+      <article class="area">
+        <h2 class="origin h2">{a.title}</h2>
+        <p>{a.text}</p>
+        <a href={a.href}>{a.link}</a>
+      </article>
+    ))}
+  </section>
+
+  <Closing
+    title="Planning a taping, concert, or event?"
+    text="Tell me the date, the venue, and the music, and I will put together the right singers."
+    href="mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry"
+  />
 </Layout>
 
 <style>
   .hero {
     position: relative;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-    align-items: end;
-    padding-top: clamp(3rem, 10vw, 8rem);
-    padding-bottom: clamp(3rem, 8vw, 6rem);
     overflow: hidden;
   }
 
-  .hero :global(.rings) {
-    position: absolute;
-    width: min(46rem, 120vw);
-    right: -12rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: -1;
+  .hero-inner {
+    position: relative;
+    padding-top: clamp(3.5rem, 9vw, 7rem);
+    padding-bottom: clamp(2.5rem, 5vw, 3.5rem);
   }
 
   .name {
-    font-size: clamp(3.6rem, 13vw, 9.5rem);
-    font-stretch: 78%;
-    font-weight: 500;
-    letter-spacing: -0.035em;
-    line-height: 0.88;
+    font-size: clamp(3.6rem, 12.5vw, 10.5rem);
+    font-weight: 850;
+    letter-spacing: -0.04em;
+    line-height: 0.86;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
   }
 
-  .name,
-  .role {
-    animation: rise 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  .venues {
+    margin-top: 2rem;
   }
 
-  .name {
-    animation-delay: 0.1s;
+  @media (min-width: 834px) {
+    .venues {
+      margin-top: 0.4rem;
+    }
   }
 
-  .role {
-    animation-delay: 0.35s;
+  .venue-list {
+    font: 600 1.1rem/1.4 var(--head);
   }
 
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(16px); }
+  .hint {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    font-size: 0.85rem;
+    color: var(--muted);
   }
 
-  .role {
-    margin-top: 1.5rem;
-    font-size: clamp(1.15rem, 2vw, 1.4rem);
-    color: var(--slate);
-    max-width: 26ch;
-    line-height: 1.35;
+  .figures {
+    padding-top: clamp(3rem, 7vw, 5.5rem);
+    padding-bottom: clamp(3rem, 7vw, 5.5rem);
+    row-gap: 2.5rem;
   }
 
-  .hero :global(.portrait) {
-    width: min(16rem, 60vw);
+  .figure {
+    grid-column: 1 / -1;
+    border-top: 2px solid var(--ink);
+    padding-top: 1rem;
   }
 
-  .hero :global(.portrait img) {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1;
-    object-fit: cover;
-    filter: grayscale(1) contrast(1.05);
+  .figure p {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    max-width: 22ch;
   }
 
-  @media (min-width: 800px) {
-    .hero {
-      grid-template-columns: 1fr auto;
+  @media (min-width: 600px) {
+    .figure {
+      grid-column: span 6;
+    }
+  }
+
+  @media (min-width: 834px) {
+    .figure {
+      grid-column: span 4;
     }
   }
 
   .areas {
-    padding-bottom: clamp(3rem, 8vw, 6rem);
+    row-gap: 3rem;
   }
 
   .area {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.4rem;
-    padding: 1.6rem 0;
-    border-top: 1px solid var(--ice);
-    text-decoration: none;
+    grid-column: 1 / -1;
   }
 
-  .area:last-child {
-    border-bottom: 1px solid var(--ice);
+  .area p {
+    color: var(--muted);
+    margin-bottom: 1rem;
   }
 
-  .area-title {
-    font-size: 1.5rem;
-    font-stretch: 85%;
-  }
-
-  .area-text {
-    color: var(--slate);
-    max-width: var(--measure);
-  }
-
-  .area::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--steel);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  .area-title {
-    transition:
-      transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
-      color 0.3s ease;
-  }
-
-  .area:hover {
-    color: inherit;
-  }
-
-  .area:hover::before,
-  .area:focus-visible::before {
-    transform: scaleX(1);
-  }
-
-  .area:hover .area-title,
-  .area:focus-visible .area-title {
-    color: var(--steel);
-    transform: translateX(6px);
-  }
-
-  @media (min-width: 800px) {
+  @media (min-width: 834px) {
     .area {
-      grid-template-columns: 18rem 1fr;
-      align-items: baseline;
+      grid-column: span 4;
     }
   }
 </style>

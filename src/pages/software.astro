@@ -1,52 +1,53 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Instrument from '../components/Instrument.astro';
+import Staff from '../components/Staff.astro';
 ---
 <Layout
   title="Nate Adams | Software Engineering"
   description="Nate Adams works at the intersection of front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM."
 >
-  <section class="page header software-header">
-    <Instrument class="rings" />
-    <h1 class="display">Software</h1>
-    <p class="lede">
-      I work at the intersection of front-end engineering and product design, specializing in
-      AI-assisted workflows.
-    </p>
+  <section class="header">
+    <Staff staves={1} center={0.86} />
+    <div class="wrap header-inner">
+      <h1 class="display origin rise">Software</h1>
+      <p class="lede rise rise-2">
+        I work at the intersection of front-end engineering and product design, specializing in
+        AI-assisted workflows.
+      </p>
+    </div>
   </section>
 
-  <section class="page rows">
-    <div class="row">
-      <h2 class="row-label">Now</h2>
-      <div class="row-body">
-        <p>
-          At <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer">Datadog</a>,
-          working on the native Cloud SIEM product.
-        </p>
-      </div>
-    </div>
-    <div class="row">
-      <h2 class="row-label">Elsewhere</h2>
-      <div class="row-body">
-        <p class="links">
-          <a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-        </p>
-      </div>
+  <section class="wrap grid block rows">
+    <div class="lead">
+      <table class="table">
+        <tbody>
+          <tr>
+            <td>Now</td>
+            <td>
+              At <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer">Datadog</a>,
+              working on the native Cloud SIEM product
+            </td>
+          </tr>
+          <tr>
+            <td>Focus</td>
+            <td>Front-end engineering, product design, and AI-assisted workflows</td>
+          </tr>
+          <tr>
+            <td>Elsewhere</td>
+            <td><a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer">LinkedIn</a></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 </Layout>
 
 <style>
-  .software-header {
-    position: relative;
+  .rows {
+    padding-bottom: clamp(4rem, 9vw, 7rem);
   }
 
-  .software-header :global(.rings) {
-    position: absolute;
-    width: min(30rem, 100vw);
-    right: -8rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: -1;
+  .rows .table tr:first-child td {
+    border-top: 2px solid var(--ink);
   }
 </style>

@@ -1,0 +1,302 @@
+---
+// A playable staff drawn behind a page's opening section. Place it as the
+// first child of a positioned container; that container receives the pointer.
+// staves=2 draws a grand staff (treble + bass); staves=1 draws a treble staff.
+interface Props {
+  staves?: 1 | 2;
+  center?: number; // vertical center of the staff, as a fraction of the height
+}
+const { staves = 2, center = 0.56 } = Astro.props;
+---
+<canvas class="staff" data-staves={staves} data-center={center} aria-hidden="true"></canvas>
+
+<style>
+  .staff {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  :global(.on-staff) {
+    cursor: none;
+  }
+</style>
+
+<script>
+  // The lines draw in once on load and ripple slightly where the pointer
+  // crosses them. A half note follows the pointer, snapped to the nearest line
+  // or space; clicking plays that pitch for the length of a half note. Under
+  // prefers-reduced-motion the lines are still, but the note and sound remain,
+  // since they only respond to the visitor.
+  type Line = { y: number; d: Float32Array; v: Float32Array };
+  type Note = { x: number; y: number; step: number; k: number; bottom: number; alpha: number; pulse: number; visible: boolean };
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SEMIS = [0, 2, 4, 5, 7, 9, 11];
+  const E4 = 4 * 7 + 2; // treble staff bottom line, in diatonic steps from C0
+  const G2 = 2 * 7 + 4; // bass staff bottom line
+
+  const freq = (step: number) => {
+    const oct = Math.floor(step / 7);
+    const deg = ((step % 7) + 7) % 7;
+    const midi = 12 * (oct + 1) + SEMIS[deg];
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  };
+
+  let audio: AudioContext | null = null;
+  function play(f: number) {
+    audio = audio || new AudioContext();
+    if (audio.state === 'suspended') audio.resume();
+    const ac = audio;
+    const now = ac.currentTime;
+    const dur = 1.5; // a half note at 80 beats per minute
+    const out = ac.createGain();
+    out.gain.setValueAtTime(0.0001, now);
+    out.gain.exponentialRampToValueAtTime(0.14, now + 0.09);
+    out.gain.setValueAtTime(0.14, now + dur - 0.35);
+    out.gain.exponentialRampToValueAtTime(0.0001, now + dur + 0.45);
+    const lp = ac.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = Math.min(2400, f * 5);
+    lp.Q.value = 0.4;
+    lp.connect(out);
+    out.connect(ac.destination);
+    const vib = ac.createOscillator();
+    const vibAmt = ac.createGain();
+    vib.frequency.value = 5;
+    vibAmt.gain.setValueAtTime(0, now);
+    vibAmt.gain.linearRampToValueAtTime(f * 0.003, now + 0.6);
+    vib.connect(vibAmt);
+    const partials: [number, OscillatorType, number][] = [
+      [1, 'triangle', 1],
+      [2, 'sine', 0.18],
+    ];
+    for (const [mult, type, level] of partials) {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.value = f * mult;
+      vibAmt.connect(o.frequency);
+      g.gain.value = level;
+      o.connect(g);
+      g.connect(lp);
+      o.start(now);
+      o.stop(now + dur + 0.5);
+    }
+    vib.start(now);
+    vib.stop(now + dur + 0.5);
+  }
+
+  function init(canvas: HTMLCanvasElement) {
+    const host = canvas.parentElement as HTMLElement;
+    const ctx = canvas.getContext('2d')!;
+    const staves = Number(canvas.dataset.staves || 2);
+    const center = Number(canvas.dataset.center || 0.56);
+    const css = getComputedStyle(document.documentElement);
+    const INK = css.getPropertyValue('--ink').trim() || '#141414';
+    const ACCENT = css.getPropertyValue('--verm').trim() || '#c63a2b';
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const N = 180;
+
+    let lines: Line[] = [];
+    let tops: number[] = [];
+    let W = 0, H = 0, gap = 12;
+    let drawIn = reduce ? 1 : 0;
+    const t0 = performance.now();
+    let running = false;
+    let last: { x: number; y: number } | null = null;
+    let note: Note | null = null;
+
+    function layout() {
+      const r = canvas.getBoundingClientRect();
+      W = r.width;
+      H = r.height;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      gap = staves === 2 ? Math.max(9, Math.min(15, H / 30)) : Math.max(10, Math.min(14, H / 14));
+      const staffH = gap * 4;
+      const between = gap * 4;
+      const total = staves === 2 ? staffH * 2 + between : staffH;
+      const top = H * center - total / 2;
+      tops = staves === 2 ? [top, top + staffH + between] : [top];
+      const ys: number[] = [];
+      for (const t of tops) for (let l = 0; l < 5; l++) ys.push(t + l * gap);
+      lines = ys.map((y) => ({ y, d: new Float32Array(N), v: new Float32Array(N) }));
+      draw();
+    }
+
+    // Nearest staff step to a y position, and where it sits.
+    function snap(y: number) {
+      const half = gap / 2;
+      let s = 0;
+      if (tops.length === 2 && Math.abs(y - (tops[1] + 2 * gap)) < Math.abs(y - (tops[0] + 2 * gap))) s = 1;
+      const bottom = tops[s] + 4 * gap;
+      const base = s === 0 ? E4 : G2;
+      const k = Math.max(-3, Math.min(11, Math.round((bottom - y) / half)));
+      return { step: base + k, y: bottom - k * half, k, bottom };
+    }
+
+    function inZone(y: number) {
+      return y > tops[0] - gap * 2 && y < tops[tops.length - 1] + gap * 6;
+    }
+
+    const easeOut = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+
+    function drawNote() {
+      if (!note || note.alpha <= 0.01) return;
+      const rx = gap * 0.68, ry = gap * 0.5;
+      const s = 1 + note.pulse * 0.25;
+      ctx.save();
+      ctx.globalAlpha = note.alpha;
+      ctx.strokeStyle = ACCENT;
+      ctx.fillStyle = ACCENT;
+      ctx.lineWidth = 1;
+      // Ledger lines above or below the staff.
+      for (let lk = -2; lk >= note.k; lk -= 2) {
+        const ly = note.bottom - lk * (gap / 2);
+        ctx.beginPath(); ctx.moveTo(note.x - rx * 1.7, ly); ctx.lineTo(note.x + rx * 1.7, ly); ctx.stroke();
+      }
+      for (let uk = 10; uk <= note.k; uk += 2) {
+        const uy = note.bottom - uk * (gap / 2);
+        ctx.beginPath(); ctx.moveTo(note.x - rx * 1.7, uy); ctx.lineTo(note.x + rx * 1.7, uy); ctx.stroke();
+      }
+      // Hollow, tilted notehead.
+      ctx.translate(note.x, note.y);
+      ctx.scale(s, s);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, -0.35, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, rx * 0.62, ry * 0.34, -0.62, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+      // Stem up on the lower half of a staff, down on the upper half.
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      if (note.k < 4) { ctx.moveTo(rx * 0.9, -ry * 0.25); ctx.lineTo(rx * 0.9, -gap * 3.5); }
+      else { ctx.moveTo(-rx * 0.9, ry * 0.25); ctx.lineTo(-rx * 0.9, gap * 3.5); }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.16;
+      const reach = W * easeOut(drawIn);
+      for (const ln of lines) {
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const x = (i / (N - 1)) * W;
+          if (x > reach) break;
+          const y = ln.y + ln.d[i];
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      drawNote();
+    }
+
+    function step() {
+      let energy = 0;
+      if (drawIn < 1) {
+        drawIn = (performance.now() - t0) / 1600;
+        energy = 1;
+      }
+      for (const { d, v } of lines) {
+        for (let i = 1; i < N - 1; i++) {
+          const a = 0.28 * (d[i - 1] + d[i + 1] - 2 * d[i]) - 0.02 * d[i];
+          v[i] = (v[i] + a) * 0.93;
+        }
+        for (let j = 1; j < N - 1; j++) {
+          d[j] += v[j];
+          energy += Math.abs(v[j]) + Math.abs(d[j]) * 0.05;
+        }
+      }
+      if (note) {
+        const target = note.visible ? 1 : 0;
+        note.alpha += (target - note.alpha) * 0.2;
+        note.pulse *= 0.9;
+        if (Math.abs(target - note.alpha) > 0.01 || note.pulse > 0.01) energy += 1;
+      }
+      draw();
+      if (energy > 0.04) requestAnimationFrame(step);
+      else running = false;
+    }
+
+    const kick = () => {
+      if (!running) {
+        running = true;
+        requestAnimationFrame(step);
+      }
+    };
+
+    const local = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+
+    function onMove(e: PointerEvent) {
+      const p = local(e);
+      if (last && !reduce) {
+        const dy = p.y - last.y;
+        for (const ln of lines) {
+          if ((last.y - ln.y) * (p.y - ln.y) <= 0) {
+            const i = Math.round((p.x / W) * (N - 1));
+            const push = Math.max(-3.5, Math.min(3.5, dy * 0.3));
+            for (let o = -4; o <= 4; o++) {
+              const q = i + o;
+              if (q > 0 && q < N - 1) ln.v[q] += push * (1 - Math.abs(o) / 5);
+            }
+          }
+        }
+      }
+      last = p;
+      if (e.pointerType === 'mouse' && inZone(p.y)) {
+        const sn = snap(p.y);
+        note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true };
+        host.classList.add('on-staff');
+      } else if (note) {
+        note.visible = false;
+        host.classList.remove('on-staff');
+      }
+      kick();
+    }
+
+    function onLeave() {
+      last = null;
+      if (note) note.visible = false;
+      host.classList.remove('on-staff');
+      kick();
+    }
+
+    function onDown(e: PointerEvent) {
+      if ((e.target as HTMLElement).closest('a, button')) return;
+      const p = local(e);
+      if (!inZone(p.y)) return;
+      const sn = snap(p.y);
+      note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true, pulse: 1 };
+      if (e.pointerType !== 'mouse') setTimeout(() => { if (note) note.visible = false; kick(); }, 1500);
+      play(freq(sn.step));
+      const nearest = lines.reduce((a, b) => (Math.abs(b.y - sn.y) < Math.abs(a.y - sn.y) ? b : a));
+      const i = Math.round((p.x / W) * (N - 1));
+      if (!reduce) {
+        for (let o = -3; o <= 3; o++) {
+          const q = i + o;
+          if (q > 0 && q < N - 1) nearest.v[q] += 1.6 * (1 - Math.abs(o) / 4);
+        }
+      }
+      kick();
+    }
+
+    layout();
+    window.addEventListener('resize', layout);
+    host.addEventListener('pointermove', onMove);
+    host.addEventListener('pointerleave', onLeave);
+    host.addEventListener('pointerdown', onDown);
+    kick();
+  }
+
+  document.querySelectorAll<HTMLCanvasElement>('canvas.staff').forEach(init);
+</script>
