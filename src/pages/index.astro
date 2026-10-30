@@ -52,17 +52,19 @@ const figures = [
   jsonLd={jsonLd}
 >
   <section class="hero">
-    <Staff />
+    <Staff center={0.5} />
     <div class="wrap hero-inner">
       <h1 class="name rise">Nate Adams</h1>
       <div class="grid">
         <p class="lead lede rise rise-2">Choral contractor, composer, and software engineer in New York City.</p>
+      </div>
+      <div class="grid below">
+        <p class="lead hint">Click the staff to hear a note, or click a chord.</p>
         <div class="rail venues rise rise-3">
           <p class="label">Choirs contracted for</p>
           <p class="venue-list">Carnegie Hall, Radio City Music Hall, Madison Square Garden, Lincoln Center</p>
         </div>
       </div>
-      <p class="hint">Click the staff to hear a note.</p>
     </div>
   </section>
 
@@ -120,13 +122,19 @@ const figures = [
     margin-bottom: clamp(2rem, 4vw, 3rem);
   }
 
+  .below {
+    margin-top: clamp(2.5rem, 6vw, 5.5rem);
+    row-gap: 1.5rem;
+    align-items: end;
+  }
+
   .venues {
-    margin-top: 2rem;
+    order: -1;
   }
 
   @media (min-width: 834px) {
     .venues {
-      margin-top: 0.4rem;
+      order: 0;
     }
   }
 
@@ -135,7 +143,6 @@ const figures = [
   }
 
   .hint {
-    margin-top: clamp(2.5rem, 6vw, 4rem);
     font-size: 0.85rem;
     color: var(--muted);
   }

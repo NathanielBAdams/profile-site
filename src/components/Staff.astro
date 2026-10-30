@@ -1,7 +1,8 @@
 ---
 // A playable staff drawn behind a page's opening section. Place it as the
 // first child of a positioned container; that container receives the pointer.
-// staves=2 draws a grand staff (treble + bass); staves=1 draws a treble staff.
+// staves=2 draws a grand staff (treble + bass) with clefs and the clickable
+// chords from src/data/chords.ts; staves=1 draws a plain treble staff.
 interface Props {
   staves?: 1 | 2;
   center?: number; // vertical center of the staff, as a fraction of the height
@@ -21,72 +22,51 @@ const { staves = 2, center = 0.56 } = Astro.props;
   :global(.on-staff) {
     cursor: none;
   }
+
+  :global(.on-chord) {
+    cursor: pointer;
+  }
 </style>
 
 <script>
   // The lines draw in once on load and ripple slightly where the pointer
   // crosses them. A half note follows the pointer, snapped to the nearest line
-  // or space; clicking plays that pitch for the length of a half note. Under
-  // prefers-reduced-motion the lines are still, but the note and sound remain,
-  // since they only respond to the visitor.
+  // or space; clicking plays that pitch for the length of a half note. On the
+  // right, a few engraved chords light up on hover and sound on click. Under
+  // prefers-reduced-motion the lines are still, but the notes, chords and sound
+  // remain, since they only respond to the visitor.
+  import { GLYPHS, WIDTH, type GlyphName } from '../scripts/glyphs';
+  import { midiOfStep, parsePitch, type Pitch } from '../scripts/pitch';
+  import { play, prefetch, prime } from '../scripts/voice';
+  import { chords as CHORDS } from '../data/chords';
+
   type Line = { y: number; d: Float32Array; v: Float32Array };
   type Note = { x: number; y: number; step: number; k: number; bottom: number; alpha: number; pulse: number; visible: boolean };
-
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SEMIS = [0, 2, 4, 5, 7, 9, 11];
-  const E4 = 4 * 7 + 2; // treble staff bottom line, in diatonic steps from C0
-  const G2 = 2 * 7 + 4; // bass staff bottom line
-
-  const freq = (step: number) => {
-    const oct = Math.floor(step / 7);
-    const deg = ((step % 7) + 7) % 7;
-    const midi = 12 * (oct + 1) + SEMIS[deg];
-    return 440 * Math.pow(2, (midi - 69) / 12);
+  type Glyph = { g: GlyphName; x: number; y: number };
+  type Chord = {
+    midis: number[];
+    x0: number; x1: number; cx: number;
+    heads: Glyph[]; accs: Glyph[];
+    stems: { x: number; y1: number; y2: number }[];
+    ledgers: { x1: number; x2: number; y: number }[];
+    h: number; pulse: number; lit: boolean;
   };
 
-  let audio: AudioContext | null = null;
-  function play(f: number) {
-    audio = audio || new AudioContext();
-    if (audio.state === 'suspended') audio.resume();
-    const ac = audio;
-    const now = ac.currentTime;
-    const dur = 1.5; // a half note at 80 beats per minute
-    const out = ac.createGain();
-    out.gain.setValueAtTime(0.0001, now);
-    out.gain.exponentialRampToValueAtTime(0.14, now + 0.09);
-    out.gain.setValueAtTime(0.14, now + dur - 0.35);
-    out.gain.exponentialRampToValueAtTime(0.0001, now + dur + 0.45);
-    const lp = ac.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = Math.min(2400, f * 5);
-    lp.Q.value = 0.4;
-    lp.connect(out);
-    out.connect(ac.destination);
-    const vib = ac.createOscillator();
-    const vibAmt = ac.createGain();
-    vib.frequency.value = 5;
-    vibAmt.gain.setValueAtTime(0, now);
-    vibAmt.gain.linearRampToValueAtTime(f * 0.003, now + 0.6);
-    vib.connect(vibAmt);
-    const partials: [number, OscillatorType, number][] = [
-      [1, 'triangle', 1],
-      [2, 'sine', 0.18],
-    ];
-    for (const [mult, type, level] of partials) {
-      const o = ac.createOscillator();
-      const g = ac.createGain();
-      o.type = type;
-      o.frequency.value = f * mult;
-      vibAmt.connect(o.frequency);
-      g.gain.value = level;
-      o.connect(g);
-      g.connect(lp);
-      o.start(now);
-      o.stop(now + dur + 0.5);
-    }
-    vib.start(now);
-    vib.stop(now + dur + 0.5);
-  }
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wide = window.matchMedia('(min-width: 834px)');
+  const E4 = 4 * 7 + 2; // treble staff bottom line, in diatonic steps from C0
+  const G2 = 2 * 7 + 4; // bass staff bottom line
+  const C4 = 4 * 7;
+  const RANGE = { treble: [-3, 10], bass: [-4, 11] }; // B3 to A5, C2 to D4
+  const paths = Object.fromEntries(
+    Object.entries(GLYPHS).map(([k, d]) => [k, new Path2D(d)]),
+  ) as Record<GlyphName, Path2D>;
+  const ACC: Record<number, GlyphName> = { 1: 'sharp', [-1]: 'flat', 2: 'doubleSharp', [-2]: 'doubleFlat' };
+  const SPECS = CHORDS.map((c) => ({
+    pitches: c.notes.map(parsePitch),
+    treble: new Set(c.treble ?? []),
+    bass: new Set(c.bass ?? []),
+  }));
 
   function init(canvas: HTMLCanvasElement) {
     const host = canvas.parentElement as HTMLElement;
@@ -101,12 +81,29 @@ const { staves = 2, center = 0.56 } = Astro.props;
 
     let lines: Line[] = [];
     let tops: number[] = [];
-    let W = 0, H = 0, gap = 12;
+    let W = 0, H = 0, gap = 12, clefX = 0;
     let drawIn = reduce ? 1 : 0;
     const t0 = performance.now();
     let running = false;
     let last: { x: number; y: number } | null = null;
     let note: Note | null = null;
+    let chords: Chord[] = [];
+    let bars: { x: number; w: number }[] = [];
+    let primed = false;
+    let lastStep = -1;
+
+    // The content column of the page, in canvas coordinates.
+    function content() {
+      const wrap = host.querySelector<HTMLElement>('.wrap');
+      const c = canvas.getBoundingClientRect();
+      if (!wrap) return { left: 0, right: W };
+      const r = wrap.getBoundingClientRect();
+      const st = getComputedStyle(wrap);
+      return {
+        left: r.left - c.left + parseFloat(st.paddingLeft),
+        right: r.right - c.left - parseFloat(st.paddingRight),
+      };
+    }
 
     function layout() {
       const r = canvas.getBoundingClientRect();
@@ -124,7 +121,82 @@ const { staves = 2, center = 0.56 } = Astro.props;
       const ys: number[] = [];
       for (const t of tops) for (let l = 0; l < 5; l++) ys.push(t + l * gap);
       lines = ys.map((y) => ({ y, d: new Float32Array(N), v: new Float32Array(N) }));
+      const col = content();
+      clefX = Math.max(gap * 0.6, col.left - gap * 4);
+      chords = [];
+      bars = [];
+      if (staves === 2 && SPECS.length) engraveAll(col);
       draw();
+    }
+
+    // Chords sit in the rail columns on wide screens, and in the right part of
+    // the content column on narrow ones. One half-note chord per measure.
+    function engraveAll(col: { left: number; right: number }) {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const gut = Math.min(1.5 * rem, Math.max(rem, window.innerWidth * 0.03)); // --gut
+      const cw = col.right - col.left;
+      const colW = (cw - 11 * gut) / 12;
+      const left = wide.matches ? col.left + 8 * (colW + gut) - gut / 2 : col.left + cw * 0.4;
+      const right = col.right;
+      const n = SPECS.length;
+      const mw = (right - left) / n;
+      for (let i = 0; i < n; i++) bars.push({ x: left + i * mw, w: 0.16 });
+      bars.push({ x: right - 1.06 * gap, w: 0.16 }, { x: right - 0.5 * gap, w: 0.5 });
+      SPECS.forEach((spec, i) => {
+        const x0 = left + i * mw;
+        const ch: Chord = {
+          midis: spec.pitches.map((p) => p.midi),
+          x0, x1: x0 + mw, cx: x0 + mw * 0.6,
+          heads: [], accs: [], stems: [], ledgers: [],
+          h: 0, pulse: 0, lit: false,
+        };
+        const onTreble = (p: Pitch) => spec.treble.has(p.name) || (!spec.bass.has(p.name) && p.step >= C4);
+        const up = spec.pitches.filter(onTreble);
+        const down = spec.pitches.filter((p) => !onTreble(p));
+        if (up.length) engraveStaff(ch, up, tops[0] + 4 * gap, E4);
+        if (down.length) engraveStaff(ch, down, tops[1] + 4 * gap, G2);
+        chords.push(ch);
+      });
+    }
+
+    // Engraves the notes of one chord that sit on one staff: noteheads with a
+    // shared stem, seconds set on the other side of the stem, ledger lines, and
+    // accidentals stacked in columns so they don't collide.
+    function engraveStaff(ch: Chord, ps: Pitch[], bottom: number, base: number) {
+      const half = gap / 2;
+      const nw = WIDTH.noteheadHalf * gap;
+      const st = Math.max(1, 0.12 * gap);
+      const notes = ps.map((p) => ({ p, k: p.step - base })).sort((a, b) => a.k - b.k);
+      const n = notes.length;
+      const stemUp = notes.reduce((s, x) => s + x.k, 0) / n < 4;
+      const flip = new Array(n).fill(false);
+      if (stemUp) for (let i = 1; i < n; i++) flip[i] = notes[i].k - notes[i - 1].k === 1 && !flip[i - 1];
+      else for (let i = n - 2; i >= 0; i--) flip[i] = notes[i + 1].k - notes[i].k === 1 && !flip[i + 1];
+      const yOf = (k: number) => bottom - k * half;
+      const heads = notes.map((x, i) => {
+        const normal = stemUp ? ch.cx - nw : ch.cx;
+        const flipped = stemUp ? ch.cx - st : ch.cx - nw + st;
+        return { g: 'noteheadHalf' as GlyphName, x: flip[i] ? flipped : normal, y: yOf(x.k), k: x.k };
+      });
+      ch.heads.push(...heads);
+      const lo = yOf(notes[0].k), hi = yOf(notes[n - 1].k);
+      if (stemUp) ch.stems.push({ x: ch.cx - st / 2, y1: lo - 0.168 * gap, y2: hi - 3.5 * gap });
+      else ch.stems.push({ x: ch.cx + st / 2, y1: hi + 0.168 * gap, y2: lo + 3.5 * gap });
+      const ext = 0.4 * gap;
+      const span = (hs: typeof heads) => ({ x1: Math.min(...hs.map((h) => h.x)) - ext, x2: Math.max(...hs.map((h) => h.x)) + nw + ext });
+      for (let lk = -2; lk >= notes[0].k; lk -= 2) ch.ledgers.push({ ...span(heads.filter((h) => h.k <= lk)), y: yOf(lk) });
+      for (let uk = 10; uk <= notes[n - 1].k; uk += 2) ch.ledgers.push({ ...span(heads.filter((h) => h.k >= uk)), y: yOf(uk) });
+      const leftmost = Math.min(...heads.map((h) => h.x)) - (notes.some((x) => x.k < 0 || x.k > 8) ? ext : 0);
+      const cols: number[][] = [];
+      for (let i = n - 1; i >= 0; i--) {
+        const { p, k } = notes[i];
+        if (!p.alter) continue;
+        let c = 0;
+        while (cols[c]?.some((o) => Math.abs(o - k) < 6)) c++;
+        (cols[c] ??= []).push(k);
+        const g = ACC[p.alter];
+        ch.accs.push({ g, x: leftmost - 0.2 * gap - c * 1.15 * gap - WIDTH[g] * gap, y: yOf(k) });
+      }
     }
 
     // Nearest staff step to a y position, and where it sits.
@@ -134,15 +206,71 @@ const { staves = 2, center = 0.56 } = Astro.props;
       if (tops.length === 2 && Math.abs(y - (tops[1] + 2 * gap)) < Math.abs(y - (tops[0] + 2 * gap))) s = 1;
       const bottom = tops[s] + 4 * gap;
       const base = s === 0 ? E4 : G2;
-      const k = Math.max(-3, Math.min(11, Math.round((bottom - y) / half)));
+      const [lo, hi] = s === 0 ? RANGE.treble : RANGE.bass;
+      const k = Math.max(lo, Math.min(hi, Math.round((bottom - y) / half)));
       return { step: base + k, y: bottom - k * half, k, bottom };
     }
 
     function inZone(y: number) {
-      return y > tops[0] - gap * 2 && y < tops[tops.length - 1] + gap * 6;
+      return y > tops[0] - gap * 2 && y < tops[tops.length - 1] + gap * 7;
     }
 
+    const chordAt = (p: { x: number; y: number }) =>
+      inZone(p.y) ? chords.find((c) => p.x >= c.x0 && p.x < c.x1) ?? null : null;
+
     const easeOut = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+    const shown = (x: number, reach: number) => Math.min(1, Math.max(0, (reach - x) / (gap * 3)));
+
+    function glyph(g: Glyph, scale = 1) {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.scale(gap * scale, gap * scale);
+      ctx.fill(paths[g.g]);
+      ctx.restore();
+    }
+
+    function drawClefs(reach: number) {
+      const a = shown(clefX, reach);
+      if (!a || tops.length < 2) return;
+      ctx.save();
+      ctx.fillStyle = INK;
+      ctx.globalAlpha = 0.3 * a;
+      glyph({ g: 'gClef', x: clefX, y: tops[0] + 3 * gap });
+      glyph({ g: 'fClef', x: clefX, y: tops[1] + gap });
+      ctx.restore();
+    }
+
+    function drawBars(reach: number) {
+      if (!bars.length) return;
+      ctx.save();
+      ctx.fillStyle = INK;
+      const y1 = tops[0], y2 = tops[1] + 4 * gap;
+      for (const b of bars) {
+        ctx.globalAlpha = 0.28 * shown(b.x, reach);
+        ctx.fillRect(b.x, y1, Math.max(1, b.w * gap), y2 - y1);
+      }
+      ctx.restore();
+    }
+
+    function drawChord(c: Chord, color: string, alpha: number) {
+      if (alpha <= 0.005) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      // A click swells the noteheads slightly around the chord's center.
+      if (c.pulse > 0.01) {
+        const s = 1 + c.pulse * 0.08;
+        const cy = (Math.min(...c.heads.map((h) => h.y)) + Math.max(...c.heads.map((h) => h.y))) / 2;
+        ctx.translate(c.cx, cy); ctx.scale(s, s); ctx.translate(-c.cx, -cy);
+      }
+      const lw = Math.max(1, 0.16 * gap);
+      for (const l of c.ledgers) ctx.fillRect(l.x1, l.y - lw / 2, l.x2 - l.x1, lw);
+      const st = Math.max(1, 0.12 * gap);
+      for (const s of c.stems) ctx.fillRect(s.x - st / 2, Math.min(s.y1, s.y2), st, Math.abs(s.y2 - s.y1));
+      for (const h of c.heads) glyph(h);
+      for (const a of c.accs) glyph(a);
+      ctx.restore();
+    }
 
     function drawNote() {
       if (!note || note.alpha <= 0.01) return;
@@ -195,6 +323,15 @@ const { staves = 2, center = 0.56 } = Astro.props;
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
+      drawClefs(reach);
+      drawBars(reach);
+      // On narrow screens the chords sit behind text, so they stay fainter.
+      const idle = wide.matches ? 0.5 : 0.26;
+      for (const c of chords) {
+        const a = shown(c.cx, reach);
+        drawChord(c, INK, idle * a * (1 - c.h));
+        drawChord(c, ACCENT, a * c.h);
+      }
       drawNote();
     }
 
@@ -220,6 +357,12 @@ const { staves = 2, center = 0.56 } = Astro.props;
         note.pulse *= 0.9;
         if (Math.abs(target - note.alpha) > 0.01 || note.pulse > 0.01) energy += 1;
       }
+      for (const c of chords) {
+        const target = c.lit ? 1 : 0;
+        c.h = reduce ? target : c.h + (target - c.h) * 0.25;
+        c.pulse = reduce ? 0 : c.pulse * 0.88;
+        if (Math.abs(target - c.h) > 0.01 || c.pulse > 0.01) energy += 1;
+      }
       draw();
       if (energy > 0.04) requestAnimationFrame(step);
       else running = false;
@@ -237,8 +380,30 @@ const { staves = 2, center = 0.56 } = Astro.props;
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
 
+    function light(c: Chord | null) {
+      for (const o of chords) o.lit = o === c;
+    }
+
+    // Sample files are fetched only once the visitor reaches the staff.
+    function warm() {
+      if (primed) return;
+      primed = true;
+      prime().then(() => prefetch(chords.flatMap((c) => c.midis)));
+    }
+
+    function ripple(x: number, y: number, amount: number) {
+      if (reduce) return;
+      const nearest = lines.reduce((a, b) => (Math.abs(b.y - y) < Math.abs(a.y - y) ? b : a));
+      const i = Math.round((x / W) * (N - 1));
+      for (let o = -3; o <= 3; o++) {
+        const q = i + o;
+        if (q > 0 && q < N - 1) nearest.v[q] += amount * (1 - Math.abs(o) / 4);
+      }
+    }
+
     function onMove(e: PointerEvent) {
       const p = local(e);
+      if (inZone(p.y)) warm();
       if (last && !reduce) {
         const dy = p.y - last.y;
         for (const ln of lines) {
@@ -253,40 +418,63 @@ const { staves = 2, center = 0.56 } = Astro.props;
         }
       }
       last = p;
-      if (e.pointerType === 'mouse' && inZone(p.y)) {
+      if (e.pointerType !== 'mouse') return kick();
+      const over = (e.target as HTMLElement).closest('a, button');
+      const c = over ? null : chordAt(p);
+      light(c);
+      host.classList.toggle('on-chord', !!c);
+      if (!c && !over && inZone(p.y)) {
         const sn = snap(p.y);
+        if (sn.step !== lastStep) { lastStep = sn.step; prefetch([midiOfStep(sn.step)]); }
         note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true };
         host.classList.add('on-staff');
-      } else if (note) {
-        note.visible = false;
+      } else {
+        if (note) note.visible = false;
         host.classList.remove('on-staff');
       }
       kick();
     }
 
-    function onLeave() {
+    function onLeave(e: PointerEvent) {
       last = null;
+      // Touch fires pointerleave when the finger lifts; a tapped note or chord
+      // stays lit until its own timer clears it.
+      if (e.pointerType !== 'mouse') return;
       if (note) note.visible = false;
-      host.classList.remove('on-staff');
+      light(null);
+      host.classList.remove('on-staff', 'on-chord');
       kick();
     }
 
+    let tapTimer = 0;
     function onDown(e: PointerEvent) {
       if ((e.target as HTMLElement).closest('a, button')) return;
       const p = local(e);
       if (!inZone(p.y)) return;
-      const sn = snap(p.y);
-      note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true, pulse: 1 };
-      if (e.pointerType !== 'mouse') setTimeout(() => { if (note) note.visible = false; kick(); }, 1500);
-      play(freq(sn.step));
-      const nearest = lines.reduce((a, b) => (Math.abs(b.y - sn.y) < Math.abs(a.y - sn.y) ? b : a));
-      const i = Math.round((p.x / W) * (N - 1));
-      if (!reduce) {
-        for (let o = -3; o <= 3; o++) {
-          const q = i + o;
-          if (q > 0 && q < N - 1) nearest.v[q] += 1.6 * (1 - Math.abs(o) / 4);
+      warm();
+      const touch = e.pointerType !== 'mouse';
+      const c = chordAt(p);
+      if (c) {
+        play(c.midis);
+        light(c);
+        c.pulse = 1;
+        if (note) note.visible = false;
+        ripple(c.cx, tops[0] + 4 * gap, 1.2);
+        ripple(c.cx, tops[1], 1.2);
+        if (touch) {
+          clearTimeout(tapTimer);
+          tapTimer = window.setTimeout(() => { light(null); kick(); }, 1500);
         }
+        return kick();
       }
+      const sn = snap(p.y);
+      note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true, pulse: reduce ? 0 : 1 };
+      if (touch) {
+        clearTimeout(tapTimer);
+        tapTimer = window.setTimeout(() => { if (note) note.visible = false; kick(); }, 1500);
+      }
+      play([midiOfStep(sn.step)]);
+      ripple(p.x, sn.y, 1.6);
       kick();
     }
 
