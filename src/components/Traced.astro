@@ -18,15 +18,16 @@ interface Props {
   alt: string;
   label?: boolean;
   cover?: boolean;
+  top?: boolean; // with cover: keep the top of the photo instead of the middle
   lazy?: boolean;
   class?: string;
 }
-const { outline, alt, label = false, cover = false, lazy = true, class: cls } = Astro.props;
+const { outline, alt, label = false, cover = false, top: alignTop = false, lazy = true, class: cls } = Astro.props;
 const { image: src, width: w, height: h, path, top } = outline;
 const id = `me-${src.replace(/\W+/g, '-')}`;
 ---
 <div
-  class:list={['traced', cover && 'cover', cls]}
+  class:list={['traced', cover && 'cover', cover && alignTop && 'top', cls]}
   style={`--w: ${w}; --h: ${h}; --tx: ${top[0] / w}; --ty: ${top[1] / h};`}
 >
   <img
@@ -39,7 +40,7 @@ const id = `me-${src.replace(/\W+/g, '-')}`;
   />
   <svg
     viewBox={`0 0 ${w} ${h}`}
-    preserveAspectRatio={cover ? 'xMidYMid slice' : 'none'}
+    preserveAspectRatio={cover ? (alignTop ? 'xMidYMin slice' : 'xMidYMid slice') : 'none'}
     data-top={`${top[0]} ${top[1]}`}
     aria-hidden="true"
   >
@@ -82,6 +83,14 @@ const id = `me-${src.replace(/\W+/g, '-')}`;
   .traced.cover img {
     height: 100%;
     object-fit: cover;
+  }
+
+  .traced.cover.top {
+    --oy: 0px;
+  }
+
+  .traced.cover.top img {
+    object-position: center top;
   }
 
   svg {

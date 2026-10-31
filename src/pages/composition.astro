@@ -123,6 +123,8 @@ const jsonLd = {
     </div>
   </section>
 
+  <Traced outline={conductingOutline} alt="Nate Adams, seen from behind, conducting a recording session of one of his pieces in a Brooklyn church, 2023, with a small vocal ensemble, microphones on stands, and an Advent wreath in the foreground" cover top lazy={false} />
+
   {lists.map((list) => (
     <section class="wrap block" aria-labelledby={list.id}>
       <h2 id={list.id} class="origin h2">{list.heading}</h2>
@@ -160,16 +162,6 @@ const jsonLd = {
     <h2 id="perf-title" class="origin h2">Lux Brumalis, performed by the Missouri State Chorale</h2>
     <div class="video">
       <YouTube id="8FUHC_xR0aM" title="Lux Brumalis, performed by the Missouri State Chorale" />
-    </div>
-  </section>
-
-  <section class="wrap">
-    <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
-    <div class="photos single">
-      <figure>
-        <Traced outline={conductingOutline} alt="Nate Adams, seen from behind, conducting a small vocal ensemble at a recording session in a Brooklyn church, with microphones on stands and an Advent wreath in the foreground" />
-        <figcaption>Conducting a recording session of one of my pieces, Brooklyn, 2023.</figcaption>
-      </figure>
     </div>
   </section>
 
@@ -225,9 +217,5 @@ const jsonLd = {
 
   .video {
     max-width: 56rem;
-  }
-
-  .photos.single {
-    max-width: 44rem;
   }
 </style>
