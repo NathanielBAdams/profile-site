@@ -69,12 +69,11 @@ const media = ['The Tonight Show Starring Jimmy Fallon', 'The Daily Show'];
 const clients = ['NBC Universal', 'Accenture', 'Sundance Film Festival'];
 const mailto = 'mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry';
 const dev = import.meta.env.DEV;
-// Where I contracted the choir (and sang in it), and where I sang.
-const contracted = new Set(['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall']);
-const credits = [...venues, ...media, ...clients].map((name) => ({
-  name,
-  role: contracted.has(name) ? 'Contracted and sang' : 'Sang',
-}));
+const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall'];
+const creditGroups = [
+  { label: 'Choirs contracted', names: contracted },
+  { label: 'On stage and on camera', names: [...venues, ...media, ...clients].filter((n) => !contracted.includes(n)) },
+];
 ---
 <Layout
   title="NYC Choral Contractor: Hire a Choir or Singers | Nate Adams"
@@ -135,8 +134,8 @@ const credits = [...venues, ...media, ...clients].map((name) => ({
       <figure data-photo="hans-zimmer">
         <Traced outline={zimmerOutline} alt="Nate Adams, right, in glasses, and Hans Zimmer taking a selfie in a hallway at Radio City Music Hall" />
         <figcaption>
-          With Hans Zimmer at Radio City Music Hall, July 2017. I contracted the choir for his two
-          concerts there.
+          With Hans Zimmer at Radio City Music Hall, July 2017, where I put together the choir for
+          his two concerts.
         </figcaption>
       </figure>
       <figure>
@@ -162,14 +161,14 @@ const credits = [...venues, ...media, ...clients].map((name) => ({
   <section class="wrap grid block">
     <div class="lead">
       <h2 class="origin h2">Credits</h2>
-      <table class="table credits">
-        <thead>
-          <tr><th scope="col">Name</th><th scope="col">Role</th></tr>
-        </thead>
-        <tbody>
-          {credits.map((c) => <tr data-shows={shows[c.name]}><td data-shows-text>{c.name}</td><td>{c.role}</td></tr>)}
-        </tbody>
-      </table>
+      {creditGroups.map((g) => (
+        <div class="credit-group">
+          <p class="label">{g.label}</p>
+          <ul class="credit-list">
+            {g.names.map((name) => <li data-shows={shows[name]}>{name}</li>)}
+          </ul>
+        </div>
+      ))}
       <div class="photos" style="--cols: 9fr 12fr">
         <figure data-photo="carnegie-hall">
           <div class="photo-frame">
@@ -182,7 +181,7 @@ const credits = [...venues, ...media, ...clients].map((name) => ({
               decoding="async"
             />
           </div>
-          <figcaption>Final Fantasy at Carnegie Hall. I contracted the choir and sang in it.</figcaption>
+          <figcaption>Final Fantasy at Carnegie Hall, from inside the choir I put together.</figcaption>
         </figure>
         <figure data-photo="tonight-show vampire-weekend">
           <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
@@ -246,14 +245,24 @@ const credits = [...venues, ...media, ...clients].map((name) => ({
     }
   }
 
-  /* Credits: the name leads, the role is quieter. */
-  .credits td:first-child {
-    color: var(--ink);
-    width: 62%;
+  .credit-group + .credit-group {
+    margin-top: 2rem;
   }
 
-  .credits td:last-child {
-    color: var(--muted);
+  .credit-group .label {
+    margin-bottom: 0.6rem;
+  }
+
+  .credit-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 2px solid var(--ink);
+  }
+
+  .credit-list li {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--rule);
   }
 
   .hire-intro {
