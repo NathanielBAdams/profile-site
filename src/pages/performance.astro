@@ -7,6 +7,7 @@ import Linked from '../components/Linked.astro';
 import Traced from '../components/Traced.astro';
 import fallonOutline from '../data/outlines/tonight-show-starring-jimmy-fallon.json';
 import hmmOutline from '../data/outlines/his-majestys-men-chicago-2023.json';
+import singersOutline from '../data/outlines/radio-city-hans-zimmer-singers-2017.json';
 
 const bio =
   'Nathaniel Adams is a New York-based vocalist equally comfortable in classical and jazz idioms. He performs regularly with ensembles including the Saint Thomas Choir of Men and Boys, the New York Philharmonic, Musica Sacra, and Clarion Music Society. In addition to his performance career, Nathaniel is a commissioned and published composer whose choral works have been performed across the U.S. and internationally in venues ranging from Lincoln Center to choral festivals in Colombia and China. He is a Resident Composer with the St. Charles Singers and has had works premiered by leading American choirs and vocal ensembles. Since 2010 he has also worked as a choral contractor in New York City, hiring choirs and singers for television, concerts, and events at venues including Carnegie Hall, Radio City Music Hall, and Madison Square Garden.';
@@ -21,6 +22,14 @@ const ensembles = [
 
 // A credit with `shows` points to the photo whose data-photo includes that id
 // (hover draws a line to it), as on the Contracting page.
+// Who I've sung with. A `shows` id points to the photo with that data-photo,
+// as on the Contracting page.
+const collaborators = [
+  { name: 'Madonna' },
+  { name: 'Hans Zimmer', shows: 'hans-zimmer' },
+  { name: 'Vampire Weekend', shows: 'vampire-weekend' },
+];
+
 const shows: Record<string, string> = {
   'The Tonight Show Starring Jimmy Fallon': 'tonight-show',
 };
@@ -93,6 +102,24 @@ const jsonLd = {
     </ul>
   </section>
 
+  <section class="wrap block" aria-labelledby="worked-with">
+    <h2 id="worked-with" class="origin h2">Worked with</h2>
+    <ul class="names">
+      {collaborators.map((c) => <li data-shows={c.shows}>{c.name}</li>)}
+    </ul>
+    <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
+    <div class="photos pair" style="--cols: 9fr 9fr">
+      <figure data-photo="hans-zimmer">
+        <Traced outline={singersOutline} alt="Nate Adams, center, and fellow singers in black, wearing headset microphones, seated together for the Hans Zimmer concerts at Radio City Music Hall" label />
+        <figcaption>With the choir for Hans Zimmer at Radio City Music Hall, 2017.</figcaption>
+      </figure>
+      <figure data-photo="tonight-show vampire-weekend">
+        <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
+        <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
+      </figure>
+    </div>
+  </section>
+
   <section class="wrap grid block">
     <div class="lead">
       <h2 class="origin h2">Credits</h2>
@@ -113,12 +140,6 @@ const jsonLd = {
         <li>Regular concerts with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
         <li>Music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
       </ul>
-      <div class="photos">
-        <figure data-photo="tonight-show vampire-weekend">
-          <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
-          <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
-        </figure>
-      </div>
     </div>
   </section>
 
@@ -175,6 +196,10 @@ const jsonLd = {
 
   .names :global(a:hover) {
     color: var(--verm);
+  }
+
+  .photos.pair {
+    max-width: 52rem;
   }
 
   .credit-group + .credit-group {

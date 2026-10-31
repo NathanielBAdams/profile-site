@@ -7,7 +7,6 @@ import Traced from '../components/Traced.astro';
 import bandOutline from '../data/outlines/choral-contracting-hero.json';
 import zimmerOutline from '../data/outlines/nate-adams-hans-zimmer-2017.json';
 import hansOutline from '../data/outlines/hans-zimmer-2017.json';
-import singersOutline from '../data/outlines/radio-city-hans-zimmer-singers-2017.json';
 
 // What I book singers for. Shown on the page and listed in the structured
 // data, so search engines see the same services a visitor does.
@@ -54,19 +53,13 @@ const jsonLd = {
 
 // A credit with `shows` points to the photo whose data-photo includes that id
 // (hover draws a line to it). If no such photo is on the page, nothing happens.
-const collaborators = [
-  { name: 'Madonna' },
-  { name: 'Hans Zimmer', shows: 'hans-zimmer' },
-  { name: 'Jackie Chan' },
-  { name: 'Vampire Weekend', shows: 'vampire-weekend' },
+const productions = [
+  { name: 'Hans Zimmer', venue: 'Radio City Music Hall', shows: 'hans-zimmer' },
+  { name: 'Final Fantasy', venue: 'Carnegie Hall', shows: 'carnegie-hall' },
+  { name: 'Game of Thrones', venue: 'Live Concert Experience with Ramin Djawadi, Madison Square Garden' },
 ];
-const shows: Record<string, string> = {
-  'Carnegie Hall': 'carnegie-hall',
-  'Radio City Music Hall': 'radio-city',
-};
 const mailto = 'mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry';
 const dev = import.meta.env.DEV;
-const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall'];
 ---
 <Layout
   title="NYC Choral Contractor: Hire a Choir or Singers | Nate Adams"
@@ -114,23 +107,24 @@ const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music 
     </ul>
   </section>
 
-  <section class="wrap block" aria-labelledby="worked-with">
-    <h2 id="worked-with" class="origin h2">Worked with</h2>
-    <ul class="names">
-      {collaborators.map((c) => <li data-shows={c.shows}>{c.name}</li>)}
+  <section class="wrap block" aria-labelledby="contracted-for">
+    <h2 id="contracted-for" class="origin h2">Choirs contracted for</h2>
+    <ul class="productions">
+      {productions.map((p) => (
+        <li data-shows={p.shows}>
+          <span class="production-name" data-shows-text>{p.name}</span>
+          <span class="production-venue">{p.venue}</span>
+        </li>
+      ))}
     </ul>
     <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
-    <div class="photos" style="--cols: 9fr 9fr 16fr">
+    <div class="photos" style="--cols: 9fr 16fr 6.75fr">
       <figure data-photo="hans-zimmer">
         <Traced outline={zimmerOutline} friend={{ outline: hansOutline, label: 'That’s Hans' }} label alt="Nate Adams, right, in glasses, and Hans Zimmer taking a selfie in a hallway at Radio City Music Hall" />
         <figcaption>
           With Hans Zimmer at Radio City Music Hall, July 2017, where I put together the choir for
           his two concerts.
         </figcaption>
-      </figure>
-      <figure>
-        <Traced outline={singersOutline} alt="Nate Adams, center, and fellow singers in black, wearing headset microphones, seated together for the Hans Zimmer concerts" label />
-        <figcaption>Some of the singers on those concerts, me among them.</figcaption>
       </figure>
       <figure data-photo="radio-city">
         <div class="photo-frame">
@@ -145,36 +139,23 @@ const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music 
         </div>
         <figcaption>The marquee for the two nights, July 25 and 26.</figcaption>
       </figure>
+      <figure data-photo="carnegie-hall">
+        <div class="photo-frame">
+          <img
+            src="/images/carnegie-hall-stage.jpg"
+            alt="View from the chorus seats on the Carnegie Hall stage during a Final Fantasy concert: the orchestra, a full house, and the lit tiers and ceiling above"
+            width="800"
+            height="1422"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <figcaption>Final Fantasy at Carnegie Hall, from inside the choir I put together.</figcaption>
+      </figure>
     </div>
-  </section>
-
-  <section class="wrap grid block">
-    <div class="lead">
-      <h2 class="origin h2">Choirs contracted</h2>
-      <ul class="credit-list">
-        {contracted.map((name) => <li data-shows={shows[name]}>{name}</li>)}
-      </ul>
-      <p class="also">
-        I also sing with ensembles across New York. See <a href="/performance/">Performance</a>.
-      </p>
-    </div>
-    <div class="rail">
-      <div class="photos">
-        <figure data-photo="carnegie-hall">
-          <div class="photo-frame">
-            <img
-              src="/images/carnegie-hall-stage.jpg"
-              alt="View from the chorus seats on the Carnegie Hall stage during a Final Fantasy concert: the orchestra, a full house, and the lit tiers and ceiling above"
-              width="800"
-              height="1422"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-          <figcaption>Final Fantasy at Carnegie Hall, from inside the choir I put together.</figcaption>
-        </figure>
-      </div>
-    </div>
+    <p class="also">
+      I also sing with ensembles across New York. See <a href="/performance/">Performance</a>.
+    </p>
   </section>
 
   {dev && (
@@ -204,39 +185,32 @@ const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music 
     }
   }
 
-  .names {
+  .productions {
     list-style: none;
     margin: 0;
     padding: 0;
+    display: grid;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .productions li {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .production-name {
     font: 800 clamp(2.4rem, 6.5vw, 5.4rem)/0.98 var(--head);
     letter-spacing: -0.03em;
   }
 
-  .credit-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 2px solid var(--ink);
-  }
-
-  .credit-list li {
-    padding: 0.85rem 0;
-    border-bottom: 1px solid var(--rule);
+  .production-venue {
+    color: var(--muted);
+    font-size: clamp(1rem, 1.4vw, 1.15rem);
   }
 
   .also {
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     color: var(--muted);
-  }
-
-  .rail .photos {
-    margin-top: 2.5rem;
-  }
-
-  @media (min-width: 834px) {
-    .rail .photos {
-      margin-top: 0;
-    }
   }
 
   .hire-intro {
