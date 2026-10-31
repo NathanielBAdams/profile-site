@@ -5,6 +5,7 @@ import Closing from '../components/Closing.astro';
 import Traced from '../components/Traced.astro';
 import bandOutline from '../data/outlines/choral-contracting-hero.json';
 import zimmerOutline from '../data/outlines/nate-adams-hans-zimmer-2017.json';
+import hansOutline from '../data/outlines/hans-zimmer-2017.json';
 import singersOutline from '../data/outlines/radio-city-hans-zimmer-singers-2017.json';
 
 // What I book singers for. Shown on the page and listed in the structured
@@ -123,7 +124,7 @@ const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music 
     <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
     <div class="photos" style="--cols: 9fr 9fr 16fr">
       <figure data-photo="hans-zimmer">
-        <Traced outline={zimmerOutline} alt="Nate Adams, right, in glasses, and Hans Zimmer taking a selfie in a hallway at Radio City Music Hall" />
+        <Traced outline={zimmerOutline} friend={{ outline: hansOutline, label: 'That’s Hans' }} label alt="Nate Adams, right, in glasses, and Hans Zimmer taking a selfie in a hallway at Radio City Music Hall" />
         <figcaption>
           With Hans Zimmer at Radio City Music Hall, July 2017, where I put together the choir for
           his two concerts.
