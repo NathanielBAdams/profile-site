@@ -146,7 +146,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
     // on every page, so the staff doesn't move as you navigate. Otherwise it
     // centers at data-center.
     function target(): Geom {
-      const title = host.querySelector<HTMLElement>('[data-page-title]');
+      const title = host.querySelector<HTMLElement>('[data-page-title]')?.closest<HTMLElement>('h1') ?? null;
       const g = staves === 2 ? Math.max(9, Math.min(14, W / 100)) : Math.max(10, Math.min(14, H / 14));
       const staffH = g * 4;
       const total = staves === 2 ? staffH * 3 : staffH;

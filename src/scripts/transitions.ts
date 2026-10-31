@@ -27,7 +27,7 @@ document.addEventListener('astro:before-preparation', (e) => {
   // clicked, so it flies up and becomes the new page's title.
   const src = e.sourceElement instanceof Element ? e.sourceElement : null;
   const heading =
-    src?.closest('.area-link')?.closest<HTMLElement>('h2') ??
+    src?.closest('.area-link')?.querySelector<HTMLElement>('span') ??
     src?.closest<HTMLElement>('.nav-links a, .nav-name');
   const title = document.querySelector<HTMLElement>('[data-page-title]');
   if (heading && title) {
