@@ -17,21 +17,12 @@ type Work = {
   publisher?: string;
   catalog?: string;
   url?: string; // the score
-  videoUrl?: string;
+  video?: { id: string; by: string }; // a YouTube performance
   listen?: string; // a SoundCloud track or set
   set?: boolean; // true when `listen` is a set
 };
 
 const works: Work[] = [
-  {
-    title: 'He Came All So Still',
-    voicing: 'SATB divisi, a cappella',
-    details: 'A Christmas motet written for the Manhattan Chorale.',
-    publisher: 'Gentry Publications',
-    catalog: 'JG2538',
-    url: 'https://www.gentrypublications.com/product/he-came-all-so-still-satb/',
-    listen: 'https://soundcloud.com/nathanielbadams/he-came-all-so-still',
-  },
   {
     title: 'Lux Brumalis',
     subtitle: "Wint'ry Light",
@@ -41,9 +32,19 @@ const works: Work[] = [
     publisher: 'Walton Music',
     catalog: 'WW1913',
     url: 'https://giamusic.com/resource/lux-brumalis-print-ww1913',
-    videoUrl: 'https://www.youtube.com/watch?v=8FUHC_xR0aM',
+    video: { id: '8FUHC_xR0aM', by: 'the Missouri State Chorale' },
     listen: 'https://soundcloud.com/nathanielbadams/sets/lux-brumalis',
     set: true,
+  },
+  {
+    title: 'He Came All So Still',
+    voicing: 'SATB divisi, a cappella',
+    details: 'A Christmas motet written for the Manhattan Chorale.',
+    publisher: 'Gentry Publications',
+    catalog: 'JG2538',
+    url: 'https://www.gentrypublications.com/product/he-came-all-so-still-satb/',
+    video: { id: '7sHSngk_I1g', by: 'the Manhattan Chorale' },
+    listen: 'https://soundcloud.com/nathanielbadams/he-came-all-so-still',
   },
   {
     title: "Black Is the Color of My True Love's Hair",
@@ -84,6 +85,9 @@ const unpublished: Work[] = [
   },
 ];
 
+const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const videos = works.filter((w) => w.video);
+
 const lists = [
   { id: 'works', heading: 'Published works', works },
   { id: 'unpublished', heading: 'Unpublished works', works: unpublished },
@@ -94,7 +98,7 @@ const home = new URL('/', Astro.site).href;
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [...works, ...unpublished].map((w) => {
-    const recordings = [w.videoUrl, w.listen].filter(Boolean).map((url) => ({ '@type': 'MusicRecording', url }));
+    const recordings = [w.video && `https://www.youtube.com/watch?v=${w.video.id}`, w.listen].filter(Boolean).map((url) => ({ '@type': 'MusicRecording', url }));
     return {
       '@type': 'MusicComposition',
       name: w.subtitle ? `${w.title} (${w.subtitle})` : w.title,
@@ -107,6 +111,24 @@ const jsonLd = {
   }),
 };
 ---
+
+<script>
+  // "Watch the performance" glides down to its video instead of jumping,
+  // then readies the play button for the keyboard.
+  document.addEventListener('astro:page-load', () => {
+    for (const a of document.querySelectorAll<HTMLAnchorElement>('a[data-smooth]')) {
+      a.addEventListener('click', (e) => {
+        const target = document.querySelector<HTMLElement>(a.hash);
+        if (!target) return;
+        e.preventDefault();
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        history.replaceState(history.state, '', a.hash);
+        target.querySelector<HTMLElement>('.yt-play')?.focus({ preventScroll: true });
+      });
+    }
+  });
+</script>
 
 <Layout
   title="Nathaniel Adams | Choral Composer"
@@ -135,9 +157,21 @@ const jsonLd = {
               <h3 class="work-title">{w.title}</h3>
               {w.subtitle && <p class="work-sub">{w.subtitle}</p>}
               {w.details && <p class="work-details"><Linked text={w.details} /></p>}
-              {w.listen && (
+              {(w.listen || w.video) && (
                 <div class="work-listen">
-                  <SoundCloud url={w.listen} title={w.title} set={w.set} />
+                  {w.listen && <SoundCloud url={w.listen} title={w.title} set={w.set} />}
+                  {w.video && (
+                    <a class="watch" href={`#video-${slug(w.title)}`} data-smooth>
+                      <span class="watch-thumb">
+                        <img src={`https://i.ytimg.com/vi/${w.video.id}/mqdefault.jpg`} alt="" width="320" height="180" loading="lazy" />
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.25" /><path d="M10 7.5l6.5 4.5-6.5 4.5z" /></svg>
+                      </span>
+                      <span class="watch-text">
+                        <span class="watch-label">Watch the performance</span>
+                        <span class="watch-by">{w.video.by.replace(/^the /, '')}</span>
+                      </span>
+                    </a>
+                  )}
                 </div>
               )}
             </div>
@@ -145,10 +179,9 @@ const jsonLd = {
               <p>{w.voicing}</p>
               {w.ensemble && <p class="muted"><Linked text={w.ensemble} /></p>}
               {w.publisher && <p class="muted">{w.publisher}{w.catalog && `, ${w.catalog}`}</p>}
-              {(w.url || w.videoUrl) && (
+              {w.url && (
                 <p class="links">
-                  {w.url && <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>}
-                  {w.videoUrl && <a href="#lux-video">Watch a performance</a>}
+                  <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>
                 </p>
               )}
             </div>
@@ -158,12 +191,14 @@ const jsonLd = {
     </section>
   ))}
 
-  <section class="wrap block" id="lux-video" aria-labelledby="perf-title">
-    <h2 id="perf-title" class="origin h2">Lux Brumalis, performed by the Missouri State Chorale</h2>
-    <div class="video">
-      <YouTube id="8FUHC_xR0aM" title="Lux Brumalis, performed by the Missouri State Chorale" />
-    </div>
-  </section>
+  {videos.map((w) => (
+    <section class="wrap block video-block" id={`video-${slug(w.title)}`} aria-labelledby={`video-${slug(w.title)}-title`}>
+      <h2 id={`video-${slug(w.title)}-title`} class="origin h2">{w.title}, performed by {w.video!.by}</h2>
+      <div class="video">
+        <YouTube id={w.video!.id} title={`${w.title}, performed by ${w.video!.by}`} />
+      </div>
+    </section>
+  ))}
 
   <Closing
     title="Commissions and perusal scores"
@@ -217,5 +252,100 @@ const jsonLd = {
 
   .video {
     max-width: 56rem;
+  }
+
+  .video-block {
+    scroll-margin-top: 5rem;
+  }
+
+  .work-listen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem 2.5rem;
+  }
+
+  /* A small still of the video that leads down to it: gray until hovered,
+     like the photos. */
+  .watch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .watch-thumb {
+    position: relative;
+    display: block;
+    width: 7.5rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--ink);
+    outline: 1.5px solid transparent;
+    outline-offset: 3px;
+    transition: outline-color 0.25s ease;
+  }
+
+  .watch-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.08);
+    transition: filter 0.35s ease, transform 0.6s var(--ease);
+  }
+
+  .watch-thumb svg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1.9rem;
+    height: 1.9rem;
+    translate: -50% -50%;
+  }
+
+  .watch-thumb circle {
+    fill: var(--verm);
+  }
+
+  .watch-thumb path {
+    fill: var(--paper);
+  }
+
+  .watch-text {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .watch-label {
+    font: 600 1.05rem/1 var(--head);
+    transition: color 0.2s ease;
+  }
+
+  .watch-by {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.2;
+  }
+
+  .watch:hover .watch-thumb,
+  .watch:focus-visible .watch-thumb {
+    outline-color: var(--verm);
+  }
+
+  .watch:hover img,
+  .watch:focus-visible img {
+    filter: none;
+    transform: scale(1.06);
+  }
+
+  .watch:hover .watch-label {
+    color: var(--verm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .watch:hover img {
+      transform: none;
+    }
   }
 </style>
