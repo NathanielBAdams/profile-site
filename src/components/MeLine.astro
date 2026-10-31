@@ -85,7 +85,7 @@
   const DRAW = 950; // ms to draw the whole stroke
   const UNDRAW = 380; // ms to retract it
 
-  type Point = { x: number; y: number; label: boolean };
+  type Point = { x: number; y: number; label: boolean; clear?: number };
   type Link = {
     key: Element; // what was hovered
     from: () => DOMRect | null; // the text to circle
@@ -184,20 +184,30 @@
 
   // One continuous stroke: a slightly irregular loop around the name, a
   // little more than a full turn, which flows into a curve down to Nate.
-  // Touch screens: from the loop, the line drops into the left margin, runs
-  // down it (outside the text column), and turns in to land on the side of
-  // the label (or his head), so it never crosses a word.
+  // Touch screens: from the loop the line swoops into the left margin, drifts
+  // down it with a slight hand-drawn waver (outside the text column), and
+  // once it's past the text (clear: the top of the photo) sweeps out in one
+  // long curve, dipping and rising to land beside the label. Never crosses
+  // a word, still reads like a pencil stroke.
   function gutterPath(pts: [number, number][], to: Point) {
     const f = (n: number) => n.toFixed(1);
     const [ex, ey] = pts[pts.length - 1];
     const pad = parseFloat(getComputedStyle(document.querySelector('.wrap') ?? document.body).paddingLeft) || 20;
-    const gx = Math.max(5, pad * 0.45);
-    const top = (document.querySelector('.nav')?.getBoundingClientRect().bottom ?? ey) + 10;
-    const turn = Math.min(36, Math.max(12, (to.x - gx) * 0.5));
-    const y2 = Math.max(top + turn, to.y);
-    let d = ` C${f(ex)} ${f(ey + 16)} ${f(gx)} ${f(top - 10)} ${f(gx)} ${f(top)}`;
-    d += ` L${f(gx)} ${f(y2 - turn)}`;
-    if (to.x - gx > 2) d += ` C${f(gx)} ${f(y2)} ${f(gx)} ${f(y2)} ${f(gx + turn)} ${f(y2)} L${f(to.x)} ${f(to.y)}`;
+    const gx = Math.max(5, pad * 0.42);
+    const navBottom = document.querySelector('.nav')?.getBoundingClientRect().bottom ?? ey;
+    const top = navBottom + 34;
+    const clear = Math.max(top + 24, Math.min(to.clear ?? to.y, to.y));
+    // Off the loop and into the margin.
+    let d = ` C${f(ex - 6)} ${f(ey + 22)} ${f(gx + 3)} ${f(top - 26)} ${f(gx)} ${f(top)}`;
+    // Down the margin, wavering a little.
+    const h = clear - top;
+    d += ` C${f(gx + 5.5)} ${f(top + h * 0.33)} ${f(gx - 2.5)} ${f(top + h * 0.68)} ${f(gx + 0.5)} ${f(clear)}`;
+    if (to.label && to.y > window.innerHeight) return d;
+    // Out into the photo: dip below the target, then rise into it moving
+    // right.
+    const span = Math.max(30, to.x - gx);
+    const dip = Math.min(70, span * 0.35);
+    d += ` C${f(gx + 1.5)} ${f(clear + Math.max(40, (to.y - clear) * 0.7 + dip))} ${f(to.x - span * 0.55)} ${f(to.y + dip)} ${f(to.x)} ${f(to.y)}`;
     return d;
   }
 
@@ -320,9 +330,9 @@
       const label = el.querySelector('.me-label');
       if (p.label && label && p.y <= window.innerHeight) {
         const r = label.getBoundingClientRect();
-        return { x: r.left, y: r.top + r.height / 2, label: true };
+        return { x: r.left, y: r.top + r.height / 2, label: true, clear: el.getBoundingClientRect().top + 6 };
       }
-      return p;
+      return { ...p, clear: el.getBoundingClientRect().top + 6 };
     };
     return { key: el, from: navName, to, mark: el, cls: 'is-active', gutter: true };
   }
