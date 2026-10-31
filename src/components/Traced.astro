@@ -143,18 +143,22 @@ const id = `me-${src.replace(/\W+/g, '-')}`;
     transition: opacity 0.3s ease, translate 0.3s var(--ease);
   }
 
+  /* Hovering either person in a photo with a friend shows both. */
   .traced:has(.me-shape:hover) .me-shape,
+  .traced:has(.friend-shape:hover) .me-shape,
   .traced.is-active .me-shape {
     fill: transparent;
     stroke: var(--verm);
   }
 
   .traced:has(.me-shape:hover) .me-color,
+  .traced:has(.friend-shape:hover) .me-color,
   .traced.is-active .me-color {
     opacity: 1;
   }
 
   .traced:has(.me-shape:hover) .me-label:not(.friend-label),
+  .traced:has(.friend-shape:hover) .me-label:not(.friend-label),
   .traced.is-active .me-label:not(.friend-label) {
     opacity: 1;
     translate: -50% -100%;
@@ -187,15 +191,21 @@ const id = `me-${src.replace(/\W+/g, '-')}`;
     background: var(--friend);
   }
 
-  .traced:has(.friend-shape:hover) .friend-shape {
+  .traced:has(.friend-shape:hover) .friend-shape,
+  .traced:has(.me-shape:hover) .friend-shape,
+  .traced.is-active .friend-shape {
     stroke: var(--friend);
   }
 
-  .traced:has(.friend-shape:hover) .friend-color {
+  .traced:has(.friend-shape:hover) .friend-color,
+  .traced:has(.me-shape:hover) .friend-color,
+  .traced.is-active .friend-color {
     opacity: 1;
   }
 
-  .traced:has(.friend-shape:hover) .friend-label {
+  .traced:has(.friend-shape:hover) .friend-label,
+  .traced:has(.me-shape:hover) .friend-label,
+  .traced.is-active .friend-label {
     opacity: 1;
     translate: -50% -100%;
   }
