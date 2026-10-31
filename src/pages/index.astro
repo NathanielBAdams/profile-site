@@ -1,0 +1,214 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Staff from '../components/Staff.astro';
+import Closing from '../components/Closing.astro';
+import Traced from '../components/Traced.astro';
+import bandOutline from '../data/outlines/choral-contracting-hero.json';
+
+const home = new URL('/', Astro.site).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Nate Adams',
+  alternateName: 'Nathaniel Adams',
+  url: home,
+  image: new URL('/images/profile-photo.jpg', Astro.site).href,
+  jobTitle: ['Choral Contractor', 'Composer', 'Software Engineer'],
+  worksFor: { '@type': 'Organization', name: 'Datadog', url: 'https://www.datadoghq.com/' },
+  address: { '@type': 'PostalAddress', addressLocality: 'New York', addressRegion: 'NY', addressCountry: 'US' },
+  knowsAbout: ['Choral contracting', 'Choral composition', 'Software engineering'],
+  sameAs: ['https://www.linkedin.com/in/adamsnathaniel/'],
+};
+
+const areas = [
+  {
+    title: 'Choral contracting',
+    href: '/choral-contracting/',
+    text: 'I hire and coordinate professional singers for television tapings, concerts, and events, from a quartet to a full chorus.',
+  },
+  {
+    title: 'Music',
+    href: '/music/',
+    text: 'I write choral music, including Lux Brumalis and He Came All So Still, and sing professionally in New York.',
+  },
+  {
+    title: 'Software',
+    href: '/software/',
+    text: 'I work on front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM.',
+  },
+];
+---
+<Layout
+  title="Nate Adams | NYC Choral Contractor, Composer & Software Engineer"
+  description="Nate Adams is a NYC-based choral contractor, composer, and software engineer. He hires choirs and vocalists for live tapings, concerts, and events at venues including Carnegie Hall, Radio City, and Madison Square Garden."
+  image="/images/profile-photo.jpg"
+  jsonLd={jsonLd}
+>
+  <section class="hero">
+    <Staff center={0.5} />
+    <div class="wrap hero-inner">
+      <h1 class="name staffed rise" data-me-name="title" data-page-title>Nate Adams</h1>
+      <p class="lede staffed rise rise-2" data-staff-quiet>
+          <a class="role" href="/choral-contracting/">Choral contractor</a>, <a class="role" href="/music/">composer</a>, and <a class="role" href="/software/">software engineer</a> in New York City.
+      </p>
+      <div class="grid below">
+        <p class="lead hint">Click the staff to hear a note, or click a chord.</p>
+        <div class="rail venues rise rise-3">
+          <p class="label">Choirs contracted for</p>
+          <p class="venue-list">Carnegie Hall, Radio City Music Hall, Madison Square Garden, Lincoln Center</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Traced outline={bandOutline} alt="A vocal ensemble contracted by Nate Adams in a New York recording studio. Nate is in the plaid shirt and cap, giving a thumbs up." cover label lazy={false} />
+
+  <section class="wrap grid areas">
+    {areas.map((a) => (
+      <article class="area">
+        <h2 class="origin h2"><a class="area-link" href={a.href}><span>{a.title}</span></a></h2>
+        <p>{a.text}</p>
+      </article>
+    ))}
+  </section>
+
+  <Closing
+    title="Planning a taping, concert, or event?"
+    text="Tell me the date, the venue, and the music, and I will put together the right singers."
+    href="mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry"
+  />
+</Layout>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-inner {
+    position: relative;
+    padding-top: clamp(3.5rem, 9vw, 7rem);
+    padding-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  @media (min-width: 1200px) {
+    .name.staffed {
+      font-size: min(7vw, 6.3rem);
+    }
+  }
+
+  .name {
+    font-size: clamp(3.6rem, 12.5vw, 10.5rem);
+    font-weight: 850;
+    letter-spacing: -0.04em;
+    line-height: 0.86;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  .below {
+    margin-top: clamp(2.5rem, 6vw, 5.5rem);
+    row-gap: 1.5rem;
+    align-items: end;
+  }
+
+  .venues {
+    order: -1;
+  }
+
+  @media (min-width: 834px) {
+    .venues {
+      order: 0;
+    }
+  }
+
+  .venue-list {
+    font: 600 1.1rem/1.4 var(--head);
+  }
+
+  /* The three roles read as plain text until hovered, then grow slightly
+     and turn vermilion. */
+  .role {
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+    transform-origin: 50% 80%;
+    transition: color 0.2s ease, transform 0.2s var(--ease);
+  }
+
+  .role:hover {
+    color: var(--verm);
+    transform: scale(1.025);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .role:hover {
+      transform: none;
+    }
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .areas {
+    padding-top: clamp(3rem, 7vw, 5.5rem);
+    row-gap: 3rem;
+  }
+
+  .area {
+    grid-column: 1 / -1;
+  }
+
+  .area {
+    position: relative;
+  }
+
+  .area p {
+    color: var(--muted);
+  }
+
+  /* The heading links to its page; the link covers the whole block, so the
+     text is clickable too. Plain until hovered, like the roles above. */
+  .area-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  /* Scale the inner span, not the link: a transform on the link would trap
+     its ::after inside it. */
+  .area-link span {
+    display: inline-block;
+    transform-origin: 0 80%;
+    transition: transform 0.2s var(--ease);
+  }
+
+  .area-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .area:hover .area-link,
+  .area-link:focus-visible {
+    color: var(--verm);
+  }
+
+  .area:hover .area-link span,
+  .area-link:focus-visible span {
+    transform: scale(1.025);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .area-link span {
+      transform: none !important;
+    }
+  }
+
+  @media (min-width: 834px) {
+    .area {
+      grid-column: span 4;
+    }
+  }
+</style>

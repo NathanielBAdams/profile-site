@@ -1,0 +1,17 @@
+---
+// Renders text with each ensemble from src/data/ensembles.ts linked, opening
+// in a new tab. Everything else stays plain text.
+import { ensembles } from '../data/ensembles';
+
+interface Props { text: string }
+const { text } = Astro.props;
+const names = Object.keys(ensembles).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+const parts = text.split(new RegExp(`(${names.join('|')})`));
+---
+{parts.map((part) =>
+  ensembles[part] ? (
+    <a href={ensembles[part]} target="_blank" rel="noopener noreferrer">{part}</a>
+  ) : (
+    part
+  ),
+)}

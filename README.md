@@ -1,70 +1,32 @@
-# Getting Started with Create React App
+# nathaniel-adams.com
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Personal site for Nate Adams: NYC choral contractor, composer, and software engineer.
 
-## Available Scripts
+Built with [Astro](https://astro.build) (plus a couple of React islands) and deployed as a static site on AWS Amplify Hosting from the `main` branch.
 
-In the project directory, you can run:
+## Develop
 
-### `yarn start`
+```sh
+npm install
+npm run dev      # http://localhost:4321
+npm run build    # type-check + build to dist/
+npm run preview  # serve the built site
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Requires Node 22.12+.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Structure
 
-### `yarn test`
+- `src/pages/`: one `.astro` file per page
+- `src/layouts/Layout.astro`: shared `<head>` (SEO meta, Open Graph, JSON-LD)
+- `src/components/`: Navbar, Section
+- `public/`: static files served as-is (images, robots.txt, favicon)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## The staff
 
-### `yarn build`
+`src/components/Staff.astro` draws the playable grand staff behind each page header.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `yarn build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `src/data/chords.ts`: the clickable chords, as spelled pitches (`C3`, `Eb4`, `Bb4`), one per measure.
+- `src/scripts/voice.ts`: the sound. It plays voice samples from `public/audio/voice/` when that folder has a `manifest.json`, and falls back to a Web Audio synth otherwise. Nothing is fetched until the visitor reaches the staff, and nothing sounds until a click or tap.
+- `src/scripts/pitch.ts`: pitch spelling and sample file names (`Cs4.mp3` for C#4).
+- `src/scripts/glyphs.ts`: clef, notehead and accidental outlines from the [Bravura](https://github.com/steinbergmedia/bravura) music font by Steinberg Media Technologies, used under the SIL Open Font License 1.1.

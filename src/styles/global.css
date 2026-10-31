@@ -1,0 +1,438 @@
+/* Raster: Swiss grid on paper. Order carries the design; vermilion is the one signal. */
+@import '@fontsource-variable/afacad-flux/wght.css';
+@import '@fontsource/imprima/400.css';
+
+:root {
+  --paper: #f4f4f0;
+  --sheet: #fbfbf8;
+  --tint: #e9e9e3;
+  --ink: #141414;
+  --muted: #555b62;
+  --rule: #d7d7d1;
+  --verm: #c63a2b;
+  --band-text: #b9bcc1;
+
+  --head: 'Afacad Flux Variable', system-ui, sans-serif;
+  --body: 'Imprima', system-ui, sans-serif;
+
+  --max: 80rem;
+  --gut: clamp(1rem, 3vw, 1.5rem);
+  --pad: clamp(1.25rem, 4vw, 3rem);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* In-page links land below the sticky nav. */
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--body);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--head);
+  margin: 0;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--verm);
+}
+
+:focus-visible {
+  outline: 2px solid var(--verm);
+  outline-offset: 3px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* Lattice: 12 columns, a 7-column lead and a 4-column rail */
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--pad);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gut);
+}
+
+.lead,
+.rail,
+.full {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 834px) {
+  .lead {
+    grid-column: 1 / span 7;
+  }
+
+  .rail {
+    grid-column: 9 / span 4;
+  }
+}
+
+/* The origin rule: a vermilion segment above a section heading */
+.origin::before {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 4px;
+  background: var(--verm);
+  margin-bottom: 1rem;
+}
+
+/* With JavaScript and motion allowed, each bar draws in from the left as its
+   section arrives, once, with the same easing as the pen-stroke line. */
+.draw-origins .origin::before {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.95s cubic-bezier(0.65, 0, 0.35, 1) 0.12s;
+}
+
+.draw-origins .origin.drawn::before {
+  transform: scaleX(1);
+}
+
+.h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+/* Page header (every page but Home) */
+.header {
+  position: relative;
+  overflow: hidden;
+}
+
+.header-inner {
+  position: relative;
+  padding-top: clamp(3.5rem, 9vw, 7rem);
+  padding-bottom: clamp(3rem, 6vw, 4.5rem);
+}
+
+/* Page headers: on wide screens the title and intro sit in the middle five
+   columns, leaving three columns of staff on each side for chords. The staff
+   reads the text's real position, so this is the only place to change it. */
+@media (min-width: 1200px) {
+  .wrap.header-inner > .staffed,
+  .wrap.hero-inner > .staffed {
+    --col: calc((min(100vw, var(--max)) - 2 * var(--pad) - 11 * var(--gut)) / 12);
+    margin-left: calc(3 * (var(--col) + var(--gut)));
+    max-width: calc(5 * var(--col) + 4 * var(--gut));
+  }
+
+  .wrap.header-inner > .display.staffed {
+    font-size: min(6.4vw, 5.8rem);
+  }
+}
+
+.display {
+  font-size: clamp(3.2rem, 10vw, 8.6rem);
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  line-height: 0.88;
+  max-width: 11ch;
+}
+
+.lede {
+  font: 400 clamp(1.4rem, 2.6vw, 2.1rem)/1.2 var(--head);
+  letter-spacing: -0.01em;
+}
+
+.header .lede {
+  margin-top: 1.5rem;
+  max-width: 30ch;
+}
+
+.rise {
+  animation: rise 1s var(--ease) both;
+}
+
+.rise-2 {
+  animation-delay: 0.2s;
+}
+
+.rise-3 {
+  animation-delay: 0.35s;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* The single primary action */
+.btn {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.9rem 1.4rem;
+  background: var(--verm);
+  color: #fff;
+  font: 600 1rem/1 var(--head);
+  text-decoration: none;
+  transition: filter 0.2s ease;
+}
+
+.btn:hover {
+  color: #fff;
+  filter: brightness(1.12);
+}
+
+/* Full-bleed photo band */
+.band-photo {
+  width: 100%;
+  height: clamp(16rem, 44vw, 34rem);
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+}
+
+/* Photo rows: on wide screens, set --cols to each photo's width-to-height
+   ratio (a 3:4 portrait beside a 4:3 landscape is 9fr 16fr) and the photos
+   line up at one height. They stack on phones. */
+.photos {
+  display: grid;
+  gap: 2rem var(--gut);
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+@media (min-width: 834px) {
+  .photos {
+    grid-template-columns: var(--cols, 1fr);
+  }
+}
+
+.photos figure {
+  margin: 0;
+}
+
+.photos img {
+  width: 100%;
+  height: auto;
+  filter: grayscale(1) contrast(1.08);
+}
+
+.photos figcaption {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Heavy figures */
+.figure-n {
+  display: block;
+  font: 800 clamp(4.5rem, 11vw, 9.4rem)/0.85 var(--head);
+  letter-spacing: -0.04em;
+}
+
+.figure-n small {
+  font-size: 0.24em;
+  font-weight: 600;
+  color: var(--verm);
+  letter-spacing: 0;
+  margin-left: 0.2em;
+}
+
+/* Sections of a page */
+.block {
+  padding-top: clamp(3rem, 7vw, 5rem);
+}
+
+.prose {
+  max-width: 38rem;
+  font-size: 1.125rem;
+}
+
+.prose p + p {
+  margin-top: 1em;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 38rem;
+}
+
+/* Editorial table: 2px graphite header rule, 1px tint lines */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font: 600 0.95rem/1.2 var(--head);
+  padding: 0 1rem 0.7rem 0;
+  border-bottom: 2px solid var(--ink);
+}
+
+.table td {
+  padding: 0.85rem 1rem 0.85rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: baseline;
+}
+
+.table td:first-child {
+  color: var(--muted);
+  width: 38%;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+}
+
+/* Between pages (Astro's client router; see src/scripts/transitions.ts).
+   The nav and the staff hold still, and the content slides a short way in
+   the direction of travel. */
+.nav {
+  view-transition-name: nav;
+}
+
+/* Entrance animations are for a fresh load; after a page change the
+   transition does that job. */
+.routed .rise {
+  animation: none;
+}
+
+::view-transition {
+  background: var(--paper);
+}
+
+::view-transition-old(root) {
+  animation: vt-out 0.18s ease-in both;
+}
+
+::view-transition-new(root) {
+  animation: vt-in-still 0.38s var(--ease) both;
+}
+
+[data-astro-transition='forward']::view-transition-old(root) {
+  animation: vt-out-left 0.24s ease-in both;
+}
+
+[data-astro-transition='forward']::view-transition-new(root) {
+  animation: vt-in-right 0.56s var(--ease) 0.06s both;
+}
+
+[data-astro-transition='back']::view-transition-old(root) {
+  animation: vt-out-right 0.24s ease-in both;
+}
+
+[data-astro-transition='back']::view-transition-new(root) {
+  animation: vt-in-left 0.56s var(--ease) 0.06s both;
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-in-still {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-48px);
+  }
+}
+
+@keyframes vt-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+}
+
+@keyframes vt-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(72px);
+  }
+}
+
+@keyframes vt-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-72px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

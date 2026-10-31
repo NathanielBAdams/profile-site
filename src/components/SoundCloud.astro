@@ -1,0 +1,99 @@
+---
+// Click-to-load SoundCloud player. Until it's pressed this is a plain button,
+// so the page loads nothing from SoundCloud (no scripts, no cookies). A set
+// gets a taller player that shows its track list.
+interface Props {
+  url: string;
+  title: string;
+  set?: boolean;
+}
+const { url, title, set = false } = Astro.props;
+const params = new URLSearchParams({
+  url,
+  color: '#c63a2b',
+  auto_play: 'true',
+  hide_related: 'true',
+  show_comments: 'false',
+  show_user: 'false',
+  show_reposts: 'false',
+  show_teaser: 'false',
+  visual: 'false',
+});
+const src = `https://w.soundcloud.com/player/?${params}`;
+---
+<div class="sc" data-src={src} data-title={title} data-height={set ? 300 : 166}>
+  <button type="button" class="sc-play" aria-label={`Listen: ${title}`}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.25" /><path d="M10 7.5l6.5 4.5-6.5 4.5z" /></svg>
+    <span>Listen</span>
+    <span class="sc-src">SoundCloud</span>
+  </button>
+</div>
+
+<script>
+  document.addEventListener('astro:page-load', () => document.querySelectorAll<HTMLElement>('.sc').forEach((el) => {
+    el.querySelector('button')?.addEventListener('click', () => {
+      const iframe = document.createElement('iframe');
+      iframe.src = el.dataset.src!;
+      iframe.title = `${el.dataset.title} on SoundCloud`;
+      iframe.allow = 'autoplay';
+      iframe.height = el.dataset.height!;
+      el.replaceChildren(iframe);
+      iframe.focus();
+    });
+  }));
+</script>
+
+<style>
+  .sc {
+    max-width: 34rem;
+  }
+
+  .sc :global(iframe) {
+    display: block;
+    width: 100%;
+    border: 0;
+  }
+
+  .sc-play {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: 600 1.05rem/1 var(--head);
+    cursor: pointer;
+  }
+
+  .sc-play svg {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+  }
+
+  .sc-play circle {
+    fill: none;
+    stroke: var(--verm);
+    stroke-width: 1.2;
+    transition: fill 0.2s ease;
+  }
+
+  .sc-play path {
+    fill: var(--verm);
+    transition: fill 0.2s ease;
+  }
+
+  .sc-play:hover circle {
+    fill: var(--verm);
+  }
+
+  .sc-play:hover path {
+    fill: var(--paper);
+  }
+
+  .sc-src {
+    color: var(--muted);
+    font: 400 0.85rem/1 var(--body);
+  }
+</style>

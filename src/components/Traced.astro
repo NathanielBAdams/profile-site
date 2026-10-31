@@ -1,0 +1,150 @@
+---
+// A photo with Nate traced by a faint vermilion silhouette. On hover he
+// appears in color against the grayscale photo, outlined in vermilion, with
+// an optional "Me" label above his head (for group shots). The outline comes
+// from scripts/trace-person.py and lives in the photo's pixel coordinates.
+//
+// cover: the photo fills a fixed-height band with object-fit: cover; the SVG
+// uses the same crop (xMidYMid slice), so the outline stays on him at any size.
+interface Outline {
+  image: string;
+  width: number;
+  height: number;
+  path: string;
+  top: number[];
+}
+interface Props {
+  outline: Outline;
+  alt: string;
+  label?: boolean;
+  cover?: boolean;
+  lazy?: boolean;
+  class?: string;
+}
+const { outline, alt, label = false, cover = false, lazy = true, class: cls } = Astro.props;
+const { image: src, width: w, height: h, path, top } = outline;
+const id = `me-${src.replace(/\W+/g, '-')}`;
+---
+<div
+  class:list={['traced', cover && 'cover', cls]}
+  style={`--w: ${w}; --h: ${h}; --tx: ${top[0] / w}; --ty: ${top[1] / h};`}
+>
+  <img
+    src={src}
+    alt={alt}
+    width={w}
+    height={h}
+    loading={lazy ? 'lazy' : undefined}
+    decoding="async"
+  />
+  <svg
+    viewBox={`0 0 ${w} ${h}`}
+    preserveAspectRatio={cover ? 'xMidYMid slice' : 'none'}
+    data-top={`${top[0]} ${top[1]}`}
+    aria-hidden="true"
+  >
+    <defs>
+      <clipPath id={id}><path d={path} /></clipPath>
+    </defs>
+    <image class="me-color" href={src} width={w} height={h} clip-path={`url(#${id})`} />
+    <path class="me-shape" d={path} />
+  </svg>
+  {label && <span class="me-label" aria-hidden="true">That’s me</span>}
+</div>
+
+<style>
+  .traced {
+    position: relative;
+    container-type: inline-size;
+    /* Rendered photo size and offset, for placing the label. */
+    --iw: 100cqw;
+    --ih: calc(100cqw * var(--h) / var(--w));
+    --ox: 0px;
+    --oy: 0px;
+  }
+
+  .traced.cover {
+    container-type: size;
+    height: clamp(16rem, 44vw, 34rem);
+    overflow: hidden;
+    --iw: max(100cqw, 100cqh * var(--w) / var(--h));
+    --ox: calc((100cqw - var(--iw)) / 2);
+    --oy: calc((100cqh - var(--ih)) / 2);
+  }
+
+  .traced img {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: grayscale(1) contrast(1.08);
+  }
+
+  .traced.cover img {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .me-shape {
+    fill: rgb(198 58 43 / 0.2);
+    stroke: transparent;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    pointer-events: visiblePainted;
+    transition: fill 0.3s ease, stroke 0.3s ease;
+  }
+
+  /* The same photo in color, clipped to Nate. */
+  .me-color {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .me-label {
+    position: absolute;
+    left: calc(var(--ox) + var(--iw) * var(--tx));
+    top: calc(var(--oy) + var(--ih) * var(--ty) - 0.6rem);
+    translate: -50% calc(-100% + 0.25rem);
+    padding: 0.2rem 0.55rem;
+    background: var(--verm);
+    color: var(--paper);
+    font: 600 0.85rem/1.2 var(--head);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease, translate 0.3s var(--ease);
+  }
+
+  .traced:has(.me-shape:hover) .me-shape,
+  .traced.is-active .me-shape {
+    fill: transparent;
+    stroke: var(--verm);
+  }
+
+  .traced:has(.me-shape:hover) .me-color,
+  .traced.is-active .me-color {
+    opacity: 1;
+  }
+
+  .traced:has(.me-shape:hover) .me-label,
+  .traced.is-active .me-label {
+    opacity: 1;
+    translate: -50% -100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .me-shape,
+    .me-color,
+    .me-label {
+      transition: none;
+    }
+  }
+</style>

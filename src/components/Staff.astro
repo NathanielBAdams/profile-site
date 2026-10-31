@@ -1,0 +1,687 @@
+---
+// A playable staff drawn behind a page's opening section. Place it as the
+// first child of a positioned container; that container receives the pointer.
+// staves=2 draws a grand staff (treble + bass) with clefs and the clickable
+// chords from src/data/chords.ts; staves=1 draws a plain treble staff.
+interface Props {
+  staves?: 1 | 2;
+  center?: number; // vertical center of the staff, as a fraction of the height
+}
+const { staves = 2, center = 0.56 } = Astro.props;
+---
+<canvas class="staff" data-staves={staves} data-center={center} aria-hidden="true" transition:persist="staff"></canvas>
+
+<style>
+  .staff {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* The host section takes the pointer; see attach(). */
+    pointer-events: none;
+    /* Between pages the canvas stays live and animates itself (see rehost),
+       so the view transition leaves it alone. */
+    view-transition-name: staff;
+  }
+
+  :global(::view-transition-group(staff)),
+  :global(::view-transition-old(staff)),
+  :global(::view-transition-new(staff)) {
+    animation: none;
+  }
+
+  :global(::view-transition-old(staff)) {
+    display: none;
+  }
+
+  :global(.on-staff) {
+    cursor: none;
+  }
+
+  :global(.on-chord) {
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  // The lines draw in once on load and ripple slightly where the pointer
+  // crosses them. A half note follows the pointer, snapped to the nearest line
+  // or space; clicking plays that pitch for the length of a half note. On the
+  // right, a few engraved chords light up on hover and sound on click. Under
+  // prefers-reduced-motion the lines are still, but the notes, chords and sound
+  // remain, since they only respond to the visitor.
+  import { GLYPHS, WIDTH, type GlyphName } from '../scripts/glyphs';
+  import { midiOfStep, parsePitch, type Pitch } from '../scripts/pitch';
+  import { play, prefetch, prime, type Sounding } from '../scripts/voice';
+  import { chords as CHORDS } from '../data/chords';
+
+  type Line = { y: number; d: Float32Array; v: Float32Array };
+  type Note = { x: number; y: number; step: number; k: number; bottom: number; alpha: number; pulse: number; visible: boolean };
+  type Glyph = { g: GlyphName; x: number; y: number };
+  type Chord = {
+    midis: number[];
+    x0: number; x1: number; cx: number;
+    heads: Glyph[]; accs: Glyph[];
+    stems: { x: number; y1: number; y2: number }[];
+    ledgers: { x1: number; x2: number; y: number }[];
+    h: number; pulse: number; hover: boolean; sound: Sounding | null;
+    key: number; // index in SPECS, to carry state across re-engraving
+  };
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wide = window.matchMedia('(min-width: 834px)');
+  const E4 = 4 * 7 + 2; // treble staff bottom line, in diatonic steps from C0
+  const G2 = 2 * 7 + 4; // bass staff bottom line
+  const C4 = 4 * 7;
+  const RANGE = { treble: [-3, 10], bass: [-4, 11] }; // B3 to A5, C2 to D4
+  const paths = Object.fromEntries(
+    Object.entries(GLYPHS).map(([k, d]) => [k, new Path2D(d)]),
+  ) as Record<GlyphName, Path2D>;
+  const ACC: Record<number, GlyphName> = { 1: 'sharp', [-1]: 'flat', 2: 'doubleSharp', [-2]: 'doubleFlat' };
+  type Spec = { pitches: Pitch[]; side: 'left' | 'right'; treble: Set<string>; bass: Set<string> };
+  const SPECS: Spec[] = CHORDS.map((c) => ({
+    pitches: c.notes.map(parsePitch),
+    side: c.side ?? 'right',
+    treble: new Set(c.treble ?? []),
+    bass: new Set(c.bass ?? []),
+  }));
+
+  function init(canvas: HTMLCanvasElement) {
+    let host = canvas.parentElement as HTMLElement;
+    const ctx = canvas.getContext('2d')!;
+    const staves = Number(canvas.dataset.staves || 2);
+    let center = Number(canvas.dataset.center || 0.56);
+    const css = getComputedStyle(document.documentElement);
+    const INK = css.getPropertyValue('--ink').trim() || '#141414';
+    const ACCENT = css.getPropertyValue('--verm').trim() || '#c63a2b';
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const N = 180;
+
+    let lines: Line[] = [];
+    let tops: number[] = [];
+    let W = 0, H = 0, gap = 12, clefX = 0;
+    let drawIn = reduce ? 1 : 0;
+    const t0 = performance.now();
+    let running = false;
+    let last: { x: number; y: number } | null = null;
+    let note: Note | null = null;
+    let chords: Chord[] = [];
+    let bars: { x: number; w: number }[] = [];
+    let primed = false;
+    let lastStep = -1;
+    type Geom = { gap: number; tops: number[] };
+
+    // The content column of the page, in canvas coordinates.
+    function content() {
+      const wrap = host.querySelector<HTMLElement>('.wrap');
+      const c = canvas.getBoundingClientRect();
+      if (!wrap) return { left: 0, right: W };
+      const r = wrap.getBoundingClientRect();
+      const st = getComputedStyle(wrap);
+      return {
+        left: r.left - c.left + parseFloat(st.paddingLeft),
+        right: r.right - c.left - parseFloat(st.paddingRight),
+      };
+    }
+
+    function size() {
+      const r = canvas.getBoundingClientRect();
+      W = r.width;
+      H = r.height;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // An element's top within the host, ignoring transforms (the title may be
+    // mid-animation when this runs).
+    function offsetIn(el: HTMLElement) {
+      let y = 0;
+      for (let n: HTMLElement | null = el; n && n !== host; n = n.offsetParent as HTMLElement | null) y += n.offsetTop;
+      return y;
+    }
+
+    // Where the staff belongs in the current host. With a page title, the
+    // staff sits at a fixed distance below the title's top, which is the same
+    // on every page, so the staff doesn't move as you navigate. Otherwise it
+    // centers at data-center.
+    function target(): Geom {
+      const title = host.querySelector<HTMLElement>('[data-page-title]');
+      const g = staves === 2 ? Math.max(9, Math.min(14, W / 100)) : Math.max(10, Math.min(14, H / 14));
+      const staffH = g * 4;
+      const total = staves === 2 ? staffH * 3 : staffH;
+      const mid = title && staves === 2
+        ? offsetIn(title) + 10 * g
+        : H * center;
+      const top = mid - total / 2;
+      return { gap: g, tops: staves === 2 ? [top, top + staffH * 2] : [top] };
+    }
+
+    // Lays out lines, clefs and chords for a given geometry, keeping the lines'
+    // motion and each chord's hover and sound.
+    function build(g: Geom) {
+      gap = g.gap;
+      tops = g.tops;
+      const ys: number[] = [];
+      for (const t of tops) for (let l = 0; l < 5; l++) ys.push(t + l * gap);
+      const prev = lines;
+      lines = ys.map((y, i) => ({ y, d: prev[i]?.d ?? new Float32Array(N), v: prev[i]?.v ?? new Float32Array(N) }));
+      const col = content();
+      clefX = Math.max(gap * 0.6, col.left - gap * 4);
+      const old = chords;
+      chords = [];
+      bars = [];
+      if (staves === 2 && SPECS.length) engraveAll(col);
+      for (const c of chords) {
+        const o = old.find((x) => x.key === c.key);
+        if (o) Object.assign(c, { h: o.h, pulse: o.pulse, hover: o.hover, sound: o.sound });
+      }
+    }
+
+    function layout() {
+      size();
+      build(target());
+      draw();
+    }
+
+    // After a page change: the canvas now sits in the new page's header, in
+    // the same place as before (see target()).
+    function rehost(nextCenter: number) {
+      detach();
+      host = canvas.parentElement as HTMLElement;
+      attach();
+      center = nextCenter;
+      note = null;
+      last = null;
+      size();
+      build(target());
+      draw();
+      kick();
+    }
+
+
+    // Chords sit in measures, one half-note chord each. The right group fills
+    // the rail columns (or the right part of a narrow screen). The left group
+    // fills the space between the clefs and the page title, and appears only
+    // when that space holds measures at least 5.2 staff spaces wide.
+    function engraveAll(col: { left: number; right: number }) {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const gut = Math.min(1.5 * rem, Math.max(rem, window.innerWidth * 0.03)); // --gut
+      const cw = col.right - col.left;
+      const colW = (cw - 11 * gut) / 12;
+      const rights = SPECS.filter((s) => s.side !== 'left');
+      const lefts = SPECS.filter((s) => s.side === 'left');
+      const railL = wide.matches ? col.left + 8 * (colW + gut) - gut / 2 : col.left + cw * 0.4;
+      group(rights, railL, col.right, true);
+      const title = host.querySelector<HTMLElement>('.staffed');
+      if (title && lefts.length) {
+        const textL = title.getBoundingClientRect().left - canvas.getBoundingClientRect().left;
+        const l = clefX + (WIDTH.gClef + 1) * gap;
+        const r = textL - gap;
+        if ((r - l) / lefts.length >= gap * 5.2) group(lefts, l, Math.min(r, l + lefts.length * gap * 7), false);
+      }
+    }
+
+    function group(specs: Spec[], left: number, right: number, last: boolean) {
+      const n = specs.length;
+      const mw = (right - left) / n;
+      for (let i = 0; i <= n; i++) {
+        if (i === n && last) bars.push({ x: right - 1.06 * gap, w: 0.16 }, { x: right - 0.5 * gap, w: 0.5 });
+        else bars.push({ x: left + i * mw - (i === n ? 0.16 * gap : 0), w: 0.16 });
+      }
+      specs.forEach((spec, i) => {
+        const x0 = left + i * mw;
+        const x1 = i === n - 1 && last ? right - 1.06 * gap : x0 + mw;
+        const ch: Chord = {
+          midis: spec.pitches.map((p) => p.midi),
+          x0, x1, cx: (x0 + x1) / 2,
+          heads: [], accs: [], stems: [], ledgers: [],
+          h: 0, pulse: 0, hover: false, sound: null,
+          key: SPECS.indexOf(spec),
+        };
+        const onTreble = (p: Pitch) => spec.treble.has(p.name) || (!spec.bass.has(p.name) && p.step >= C4);
+        const up = spec.pitches.filter(onTreble);
+        const down = spec.pitches.filter((p) => !onTreble(p));
+        if (up.length) engraveStaff(ch, up, tops[0] + 4 * gap, E4);
+        if (down.length) engraveStaff(ch, down, tops[1] + 4 * gap, G2);
+        centerInk(ch);
+        chords.push(ch);
+      });
+    }
+
+    // Shifts a chord so its ink, accidentals included, is centered in its
+    // measure.
+    function centerInk(ch: Chord) {
+      const nw = WIDTH.noteheadHalf * gap;
+      const lo = Math.min(...ch.heads.map((h) => h.x), ...ch.accs.map((a) => a.x), ...ch.ledgers.map((l) => l.x1));
+      const hi = Math.max(...ch.heads.map((h) => h.x + nw), ...ch.ledgers.map((l) => l.x2));
+      const d = (ch.x0 + ch.x1) / 2 - (lo + hi) / 2;
+      ch.cx += d;
+      for (const g of [...ch.heads, ...ch.accs]) g.x += d;
+      for (const s of ch.stems) s.x += d;
+      for (const l of ch.ledgers) { l.x1 += d; l.x2 += d; }
+    }
+
+    // Engraves the notes of one chord that sit on one staff: noteheads with a
+    // shared stem, seconds set on the other side of the stem, ledger lines, and
+    // accidentals stacked in columns so they don't collide.
+    function engraveStaff(ch: Chord, ps: Pitch[], bottom: number, base: number) {
+      const half = gap / 2;
+      const nw = WIDTH.noteheadHalf * gap;
+      const st = Math.max(1, 0.12 * gap);
+      const notes = ps.map((p) => ({ p, k: p.step - base })).sort((a, b) => a.k - b.k);
+      const n = notes.length;
+      const stemUp = notes.reduce((s, x) => s + x.k, 0) / n < 4;
+      const flip = new Array(n).fill(false);
+      if (stemUp) for (let i = 1; i < n; i++) flip[i] = notes[i].k - notes[i - 1].k === 1 && !flip[i - 1];
+      else for (let i = n - 2; i >= 0; i--) flip[i] = notes[i + 1].k - notes[i].k === 1 && !flip[i + 1];
+      const yOf = (k: number) => bottom - k * half;
+      const heads = notes.map((x, i) => {
+        const normal = stemUp ? ch.cx - nw : ch.cx;
+        const flipped = stemUp ? ch.cx - st : ch.cx - nw + st;
+        return { g: 'noteheadHalf' as GlyphName, x: flip[i] ? flipped : normal, y: yOf(x.k), k: x.k };
+      });
+      ch.heads.push(...heads);
+      const lo = yOf(notes[0].k), hi = yOf(notes[n - 1].k);
+      if (stemUp) ch.stems.push({ x: ch.cx - st / 2, y1: lo - 0.168 * gap, y2: hi - 3.5 * gap });
+      else ch.stems.push({ x: ch.cx + st / 2, y1: hi + 0.168 * gap, y2: lo + 3.5 * gap });
+      const ext = 0.4 * gap;
+      const span = (hs: typeof heads) => ({ x1: Math.min(...hs.map((h) => h.x)) - ext, x2: Math.max(...hs.map((h) => h.x)) + nw + ext });
+      for (let lk = -2; lk >= notes[0].k; lk -= 2) ch.ledgers.push({ ...span(heads.filter((h) => h.k <= lk)), y: yOf(lk) });
+      for (let uk = 10; uk <= notes[n - 1].k; uk += 2) ch.ledgers.push({ ...span(heads.filter((h) => h.k >= uk)), y: yOf(uk) });
+      const leftmost = Math.min(...heads.map((h) => h.x)) - (notes.some((x) => x.k < 0 || x.k > 8) ? ext : 0);
+      const cols: number[][] = [];
+      for (let i = n - 1; i >= 0; i--) {
+        const { p, k } = notes[i];
+        if (!p.alter) continue;
+        let c = 0;
+        while (cols[c]?.some((o) => Math.abs(o - k) < 6)) c++;
+        (cols[c] ??= []).push(k);
+        const g = ACC[p.alter];
+        ch.accs.push({ g, x: leftmost - 0.2 * gap - c * 1.15 * gap - WIDTH[g] * gap, y: yOf(k) });
+      }
+    }
+
+    // Nearest staff step to a y position, and where it sits.
+    function snap(y: number) {
+      const half = gap / 2;
+      let s = 0;
+      if (tops.length === 2 && Math.abs(y - (tops[1] + 2 * gap)) < Math.abs(y - (tops[0] + 2 * gap))) s = 1;
+      const bottom = tops[s] + 4 * gap;
+      const base = s === 0 ? E4 : G2;
+      const [lo, hi] = s === 0 ? RANGE.treble : RANGE.bass;
+      const k = Math.max(lo, Math.min(hi, Math.round((bottom - y) / half)));
+      return { step: base + k, y: bottom - k * half, k, bottom };
+    }
+
+    function inZone(y: number) {
+      return y > tops[0] - gap * 2 && y < tops[tops.length - 1] + gap * 7;
+    }
+
+    const chordAt = (p: { x: number; y: number }) =>
+      inZone(p.y) ? chords.find((c) => p.x >= c.x0 && p.x < c.x1) ?? null : null;
+
+    const easeOut = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+    const shown = (x: number, reach: number) => Math.min(1, Math.max(0, (reach - x) / (gap * 3)));
+
+    function glyph(g: Glyph, scale = 1) {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.scale(gap * scale, gap * scale);
+      ctx.fill(paths[g.g]);
+      ctx.restore();
+    }
+
+    function drawClefs(reach: number) {
+      const a = shown(clefX, reach);
+      if (!a || tops.length < 2) return;
+      ctx.save();
+      ctx.fillStyle = INK;
+      ctx.globalAlpha = 0.3 * a;
+      glyph({ g: 'gClef', x: clefX, y: tops[0] + 3 * gap });
+      glyph({ g: 'fClef', x: clefX, y: tops[1] + gap });
+      ctx.restore();
+    }
+
+    function drawBars(reach: number) {
+      if (!bars.length) return;
+      ctx.save();
+      ctx.fillStyle = INK;
+      const y1 = tops[0], y2 = tops[1] + 4 * gap;
+      for (const b of bars) {
+        ctx.globalAlpha = 0.28 * shown(b.x, reach);
+        ctx.fillRect(b.x, y1, Math.max(1, b.w * gap), y2 - y1);
+      }
+      ctx.restore();
+    }
+
+    function drawChord(c: Chord, color: string, alpha: number) {
+      if (alpha <= 0.005) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      // A click swells the noteheads slightly around the chord's center.
+      if (c.pulse > 0.01) {
+        const s = 1 + c.pulse * 0.08;
+        const cy = (Math.min(...c.heads.map((h) => h.y)) + Math.max(...c.heads.map((h) => h.y))) / 2;
+        ctx.translate(c.cx, cy); ctx.scale(s, s); ctx.translate(-c.cx, -cy);
+      }
+      const lw = Math.max(1, 0.16 * gap);
+      for (const l of c.ledgers) ctx.fillRect(l.x1, l.y - lw / 2, l.x2 - l.x1, lw);
+      const st = Math.max(1, 0.12 * gap);
+      for (const s of c.stems) ctx.fillRect(s.x - st / 2, Math.min(s.y1, s.y2), st, Math.abs(s.y2 - s.y1));
+      for (const h of c.heads) glyph(h);
+      for (const a of c.accs) glyph(a);
+      ctx.restore();
+    }
+
+    function drawNote() {
+      if (!note || note.alpha <= 0.01) return;
+      const rx = gap * 0.68, ry = gap * 0.5;
+      const s = 1 + note.pulse * 0.25;
+      ctx.save();
+      ctx.globalAlpha = note.alpha;
+      ctx.strokeStyle = ACCENT;
+      ctx.fillStyle = ACCENT;
+      ctx.lineWidth = 1;
+      // Ledger lines above or below the staff.
+      for (let lk = -2; lk >= note.k; lk -= 2) {
+        const ly = note.bottom - lk * (gap / 2);
+        ctx.beginPath(); ctx.moveTo(note.x - rx * 1.7, ly); ctx.lineTo(note.x + rx * 1.7, ly); ctx.stroke();
+      }
+      for (let uk = 10; uk <= note.k; uk += 2) {
+        const uy = note.bottom - uk * (gap / 2);
+        ctx.beginPath(); ctx.moveTo(note.x - rx * 1.7, uy); ctx.lineTo(note.x + rx * 1.7, uy); ctx.stroke();
+      }
+      // Hollow, tilted notehead.
+      ctx.translate(note.x, note.y);
+      ctx.scale(s, s);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, -0.35, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, rx * 0.62, ry * 0.34, -0.62, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+      // Stem up on the lower half of a staff, down on the upper half.
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      if (note.k < 4) { ctx.moveTo(rx * 0.9, -ry * 0.25); ctx.lineTo(rx * 0.9, -gap * 3.5); }
+      else { ctx.moveTo(-rx * 0.9, ry * 0.25); ctx.lineTo(-rx * 0.9, gap * 3.5); }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.16;
+      const reach = W * easeOut(drawIn);
+      for (const ln of lines) {
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const x = (i / (N - 1)) * W;
+          if (x > reach) break;
+          const y = ln.y + ln.d[i];
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      drawClefs(reach);
+      drawBars(reach);
+      // On narrow screens the chords sit behind text, so they stay fainter.
+      const idle = wide.matches ? 0.5 : 0.26;
+      for (const c of chords) {
+        const a = shown(c.cx, reach);
+        drawChord(c, INK, idle * a * (1 - c.h));
+        drawChord(c, ACCENT, a * c.h);
+        drawPlayhead(c, performance.now());
+      }
+      drawNote();
+    }
+
+    // While a chord sounds, the lines under it tremble faintly, fading with
+    // the note.
+    function hum(c: Chord, now: number) {
+      const s = c.sound!;
+      const t = (now - s.at) / 1000;
+      if (t < 0) return;
+      const fade = Math.max(0, 1 - (now - s.at) / (s.until - s.at));
+      const i = Math.round((c.cx / W) * (N - 1));
+      lines.forEach((ln, li) => {
+        const f = Math.sin(t * 2 * Math.PI * (5 + li * 0.37)) * 0.09 * fade;
+        for (let o = -6; o <= 6; o++) {
+          const q = i + o;
+          if (q > 0 && q < N - 1) ln.v[q] += f * (1 - Math.abs(o) / 7);
+        }
+      });
+    }
+
+    // A thin vermilion line sweeps the measure over the half note's length,
+    // then fades with the release.
+    function drawPlayhead(c: Chord, now: number) {
+      if (!sounding(c, now) || reduce) return;
+      const s = c.sound!;
+      const p = (now - s.at) / s.dur;
+      if (p < 0) return;
+      const pad = gap * 0.8;
+      const x = c.x0 + pad + Math.min(1, p) * (c.x1 - c.x0 - 2 * pad);
+      const a = p <= 1 ? 1 : Math.max(0, 1 - (now - s.at - s.dur) / (s.until - s.at - s.dur));
+      ctx.save();
+      ctx.globalAlpha = 0.85 * a;
+      ctx.fillStyle = ACCENT;
+      ctx.fillRect(x, tops[0] - gap, 1.5, tops[1] + 5 * gap - (tops[0] - gap));
+      ctx.restore();
+    }
+
+    function step() {
+      let energy = 0;
+      if (drawIn < 1) {
+        drawIn = (performance.now() - t0) / 1600;
+        energy = 1;
+      }
+      for (const { d, v } of lines) {
+        for (let i = 1; i < N - 1; i++) {
+          const a = 0.28 * (d[i - 1] + d[i + 1] - 2 * d[i]) - 0.02 * d[i];
+          v[i] = (v[i] + a) * 0.93;
+        }
+        for (let j = 1; j < N - 1; j++) {
+          d[j] += v[j];
+          energy += Math.abs(v[j]) + Math.abs(d[j]) * 0.05;
+        }
+      }
+      if (note) {
+        const target = note.visible ? 1 : 0;
+        note.alpha += (target - note.alpha) * 0.2;
+        note.pulse *= 0.9;
+        if (Math.abs(target - note.alpha) > 0.01 || note.pulse > 0.01) energy += 1;
+      }
+      const now = performance.now();
+      for (const c of chords) {
+        const on = sounding(c, now);
+        const target = c.hover || on ? 1 : 0;
+        if (on) {
+          energy += 1;
+          if (!reduce) hum(c, now);
+        }
+        c.h = reduce ? target : c.h + (target - c.h) * 0.25;
+        c.pulse = reduce ? 0 : c.pulse * 0.88;
+        if (Math.abs(target - c.h) > 0.01 || c.pulse > 0.01) energy += 1;
+      }
+      draw();
+      if (energy > 0.04) requestAnimationFrame(step);
+      else running = false;
+    }
+
+    const kick = () => {
+      if (!running) {
+        running = true;
+        requestAnimationFrame(step);
+      }
+    };
+
+    const local = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+
+    function light(c: Chord | null) {
+      for (const o of chords) o.hover = o === c;
+    }
+
+    const sounding = (c: Chord, now: number) => !!c.sound && now < c.sound.until;
+
+    // Sample files are fetched only once the visitor reaches the staff.
+    function warm() {
+      if (primed) return;
+      primed = true;
+      prime().then(() => prefetch(chords.flatMap((c) => c.midis)));
+    }
+
+    function ripple(x: number, y: number, amount: number) {
+      if (reduce) return;
+      const nearest = lines.reduce((a, b) => (Math.abs(b.y - y) < Math.abs(a.y - y) ? b : a));
+      const i = Math.round((x / W) * (N - 1));
+      for (let o = -3; o <= 3; o++) {
+        const q = i + o;
+        if (q > 0 && q < N - 1) nearest.v[q] += amount * (1 - Math.abs(o) / 4);
+      }
+    }
+
+    // Links, buttons and any text marked data-staff-quiet get a margin where
+    // the staff steps aside: no half note, no sound, the normal cursor. Marked
+    // text is measured line by line, so the zone hugs the words.
+    const QUIET = 'a, button, [data-staff-quiet]';
+    const PAD = 12;
+    function quiet(e: PointerEvent) {
+      if ((e.target as HTMLElement).closest('a, button')) return true;
+      const { clientX: x, clientY: y } = e;
+      for (const el of host.querySelectorAll<HTMLElement>(QUIET)) {
+        let rects: DOMRect[] = [el.getBoundingClientRect()];
+        if (el.matches('[data-staff-quiet]')) {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          rects = [...range.getClientRects()];
+        }
+        for (const r of rects) {
+          if (x > r.left - PAD && x < r.right + PAD && y > r.top - PAD && y < r.bottom + PAD) return true;
+        }
+      }
+      return false;
+    }
+
+    function onMove(e: PointerEvent) {
+      const p = local(e);
+      if (inZone(p.y)) warm();
+      if (last && !reduce) {
+        const dy = p.y - last.y;
+        for (const ln of lines) {
+          if ((last.y - ln.y) * (p.y - ln.y) <= 0) {
+            const i = Math.round((p.x / W) * (N - 1));
+            const push = Math.max(-3.5, Math.min(3.5, dy * 0.3));
+            for (let o = -4; o <= 4; o++) {
+              const q = i + o;
+              if (q > 0 && q < N - 1) ln.v[q] += push * (1 - Math.abs(o) / 5);
+            }
+          }
+        }
+      }
+      last = p;
+      if (e.pointerType !== 'mouse') return kick();
+      const over = quiet(e);
+      const c = over ? null : chordAt(p);
+      light(c);
+      host.classList.toggle('on-chord', !!c);
+      if (!c && !over && inZone(p.y)) {
+        const sn = snap(p.y);
+        if (sn.step !== lastStep) { lastStep = sn.step; prefetch([midiOfStep(sn.step)]); }
+        note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true };
+        host.classList.add('on-staff');
+      } else {
+        if (note) note.visible = false;
+        host.classList.remove('on-staff');
+      }
+      kick();
+    }
+
+    function onLeave(e: PointerEvent) {
+      last = null;
+      // Touch fires pointerleave when the finger lifts; a tapped note or chord
+      // stays lit until its own timer clears it.
+      if (e.pointerType !== 'mouse') return;
+      if (note) note.visible = false;
+      light(null);
+      host.classList.remove('on-staff', 'on-chord');
+      kick();
+    }
+
+    let tapTimer = 0;
+    let lastChord = -1e9;
+    function onDown(e: PointerEvent) {
+      if (quiet(e)) return;
+      const p = local(e);
+      if (!inZone(p.y)) return;
+      warm();
+      const touch = e.pointerType !== 'mouse';
+      const c = chordAt(p);
+      if (c) {
+        // Ignore a second click within a moment of the last chord, so a
+        // double click or a bouncing tap starts one chord, not two.
+        const now = performance.now();
+        if (now - lastChord < 180) return;
+        lastChord = now;
+        play(c.midis, { chord: true }).then((s) => {
+          if (s) c.sound = s;
+          kick();
+        });
+        if (!touch) light(c);
+        c.pulse = reduce ? 0 : 1;
+        if (note) note.visible = false;
+        ripple(c.cx, tops[0] + 4 * gap, 1.2);
+        ripple(c.cx, tops[1], 1.2);
+        return kick();
+      }
+      const sn = snap(p.y);
+      note = { ...(note || { alpha: 0, pulse: 0 }), x: p.x, y: sn.y, step: sn.step, k: sn.k, bottom: sn.bottom, visible: true, pulse: reduce ? 0 : 1 };
+      if (touch) {
+        clearTimeout(tapTimer);
+        tapTimer = window.setTimeout(() => { if (note) note.visible = false; kick(); }, 1500);
+      }
+      play([midiOfStep(sn.step)]);
+      ripple(p.x, sn.y, 1.6);
+      kick();
+    }
+
+    function attach() {
+      host.addEventListener('pointermove', onMove);
+      host.addEventListener('pointerleave', onLeave);
+      host.addEventListener('pointerdown', onDown);
+    }
+    function detach() {
+      host.removeEventListener('pointermove', onMove);
+      host.removeEventListener('pointerleave', onLeave);
+      host.removeEventListener('pointerdown', onDown);
+      host.classList.remove('on-staff', 'on-chord');
+    }
+
+    layout();
+    window.addEventListener('resize', layout);
+    attach();
+    kick();
+    return { rehost };
+  }
+
+  // One staff for the whole visit: the page router keeps this canvas across
+  // pages (transition:persist), so chords keep ringing as you navigate.
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas.staff');
+  const staff = canvas ? init(canvas) : null;
+  let nextCenter = 0.56;
+  document.addEventListener('astro:before-swap', (e) => {
+    const c = e.newDocument.querySelector<HTMLCanvasElement>('canvas.staff');
+    nextCenter = Number(c?.dataset.center || 0.56);
+  });
+  document.addEventListener('astro:after-swap', () => {
+    if (!staff || !canvas?.isConnected) return;
+    canvas.dataset.center = String(nextCenter);
+    staff.rehost(nextCenter);
+  });
+</script>
