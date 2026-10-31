@@ -52,9 +52,9 @@ const areas = [
   <section class="hero">
     <Staff center={0.5} />
     <div class="wrap hero-inner">
-      <h1 class="name staffed rise" data-me-name="title" data-page-title>Nate Adams</h1>
+      <h1 class="name staffed rise" data-me-name="title" data-page-title data-staff-quiet>Nate Adams</h1>
       <p class="lede staffed rise rise-2" data-staff-quiet>
-          <a class="role" href="/choral-contracting/">Choral contractor</a>, <a class="role" href="/composition/">composer</a>, <a class="role" href="/performance/">singer</a>, and <a class="role" href="/software/">software engineer</a> in New York City.
+          <span class="nw"><a class="role" href="/choral-contracting/">Choral contractor</a>,</span> <span class="nw"><a class="role" href="/composition/">composer</a>,</span> <span class="nw"><a class="role" href="/performance/">singer</a>,</span> and <a class="role" href="/software/">software engineer</a> in New York City.
       </p>
       <div class="grid below">
         <p class="lead hint">Click the staff to hear a note, or click a chord.</p>
@@ -138,6 +138,11 @@ const areas = [
     text-decoration: none;
     transform-origin: 50% 80%;
     transition: color 0.2s ease, transform 0.2s var(--ease);
+  }
+
+  /* Keeps each role with its comma, so a comma never starts a line. */
+  .nw {
+    white-space: nowrap;
   }
 
   .role:hover {
