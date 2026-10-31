@@ -10,13 +10,19 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
 <header class="nav">
   <div class="wrap nav-inner">
     <a class="nav-name" href="/" data-me-name="nav">Nate Adams</a>
-    <nav class="nav-links" aria-label="Main">
-      {links.map((l) => (
-        <a href={l.href} aria-current={path === l.href ? 'page' : undefined}>{l.label}</a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+      <span class="nav-toggle-word" aria-hidden="true"><span>Menu</span><span>Close</span></span>
+      <span class="nav-toggle-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="sr-only">Menu</span>
+    </button>
+    <nav class="nav-links" id="nav-links" aria-label="Main">
+      {links.map((l, i) => (
+        <a href={l.href} aria-current={path === l.href ? 'page' : undefined} style={`--i: ${i}`}>{l.label}</a>
       ))}
       <span class="nav-bar" aria-hidden="true"></span>
     </nav>
   </div>
+  <div class="nav-scrim" aria-hidden="true"></div>
 </header>
 
 <style>
@@ -121,6 +127,221 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
       transform 0.45s var(--ease),
       opacity 0.25s ease;
   }
+
+  /* Phones only (everything below lives behind this breakpoint, so desktop
+     never sees it). The links fold into a menu: the button's three lines are
+     a little staff, which turns into a close mark; the panel's rows draw in
+     left to right like staff lines, and the current page gets the vermilion
+     rule. */
+  .nav-toggle,
+  .nav-scrim {
+    display: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 833px) {
+    .nav-inner {
+      flex-wrap: nowrap;
+      align-items: center;
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin: -0.5rem -0.5rem -0.5rem 0;
+      padding: 0.5rem;
+      border: 0;
+      background: none;
+      color: var(--ink);
+      font: 600 0.85rem/1 var(--head);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* "Menu" and "Close" share one slot and swap with a short slide. */
+    .nav-toggle-word {
+      display: grid;
+      overflow: hidden;
+      text-align: right;
+    }
+
+    .nav-toggle-word > span {
+      grid-area: 1 / 1;
+      transition: transform 0.35s var(--ease), opacity 0.25s ease;
+    }
+
+    .nav-toggle-word > span + span {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+
+    .nav-toggle-lines {
+      position: relative;
+      width: 1.25rem;
+      height: 0.8rem;
+    }
+
+    .nav-toggle-lines i {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1.5px;
+      background: currentColor;
+      transition: transform 0.4s var(--ease), opacity 0.2s ease, background-color 0.3s ease;
+    }
+
+    .nav-toggle-lines i:nth-child(1) { top: 0; }
+    .nav-toggle-lines i:nth-child(2) { top: calc(50% - 0.75px); transform-origin: right center; }
+    .nav-toggle-lines i:nth-child(3) { bottom: 0; }
+
+    .nav.open .nav-toggle-word > span:first-child {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+
+    .nav.open .nav-toggle-word > span + span {
+      transform: none;
+      opacity: 1;
+    }
+
+    .nav.open .nav-toggle-lines i:nth-child(1) {
+      transform: translateY(calc(0.4rem - 0.75px)) rotate(45deg);
+      background: var(--verm);
+    }
+
+    .nav.open .nav-toggle-lines i:nth-child(2) {
+      transform: scaleX(0);
+      opacity: 0;
+    }
+
+    .nav.open .nav-toggle-lines i:nth-child(3) {
+      transform: translateY(calc(-0.4rem + 0.75px)) rotate(-45deg);
+      background: var(--verm);
+    }
+
+    /* The panel: hangs from the bottom of the bar. */
+    .nav-links {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      display: grid;
+      gap: 0;
+      padding: 0.5rem var(--pad) 1.75rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
+      font-size: 1rem;
+      visibility: hidden;
+      clip-path: inset(0 0 100% 0);
+      transition: clip-path 0.45s var(--ease), visibility 0s linear 0.45s;
+    }
+
+    .nav.open .nav-links {
+      visibility: visible;
+      clip-path: inset(0 0 -1px 0);
+      transition: clip-path 0.5s var(--ease), visibility 0s;
+    }
+
+    .nav-links .nav-bar {
+      display: none;
+    }
+
+    .nav-links a {
+      display: block;
+      padding: 1rem 0 0.95rem;
+      color: var(--ink);
+      font: 800 clamp(1.9rem, 8.5vw, 2.4rem)/1 var(--head);
+      letter-spacing: -0.03em;
+      opacity: 0;
+      transform: translateY(0.5rem);
+      transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease;
+    }
+
+    /* Each row's rule draws in from the left, one after another. */
+    .nav-links a::after {
+      display: block !important;
+      top: 0;
+      bottom: auto;
+      height: 1px;
+      background: var(--rule);
+      transform: scaleX(0);
+      transition: transform 0.2s ease;
+    }
+
+    .nav-links a:first-of-type::after {
+      display: none !important;
+    }
+
+    /* The current page: vermilion, with the origin rule above it. */
+    .nav-links a[aria-current='page'] {
+      color: var(--verm);
+    }
+
+    .nav-links a[aria-current='page']::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 3px;
+      margin-bottom: 0.6rem;
+      background: var(--verm);
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 0.2s ease;
+    }
+
+    .nav.open .nav-links a {
+      opacity: 1;
+      transform: none;
+      transition:
+        opacity 0.4s ease calc(0.1s + var(--i) * 0.06s),
+        transform 0.5s var(--ease) calc(0.1s + var(--i) * 0.06s),
+        color 0.2s ease;
+    }
+
+    .nav.open .nav-links a::after {
+      transform: scaleX(1);
+      transition: transform 0.6s var(--ease) calc(0.05s + var(--i) * 0.06s);
+    }
+
+    .nav.open .nav-links a[aria-current='page']::before {
+      transform: scaleX(1);
+      transition: transform 0.7s var(--ease) calc(0.25s + var(--i) * 0.06s);
+    }
+
+    .nav-links a:active {
+      color: var(--verm);
+    }
+
+    /* The page below dims while the menu is open; tapping it closes. */
+    .nav-scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: rgb(244 244 240 / 0.72);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+    }
+
+    .nav.open .nav-scrim {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.35s ease, visibility 0s;
+    }
+  }
 </style>
 
 <script>
@@ -170,6 +391,28 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
       };
       document.fonts?.ready.then(settle);
       new ResizeObserver(settle).observe(nav);
+    }
+
+    // Phones: the menu button opens and closes the links.
+    const header = document.querySelector<HTMLElement>('.nav');
+    const toggle = header?.querySelector<HTMLButtonElement>('.nav-toggle');
+    if (header && toggle && nav) {
+      const set = (open: boolean, focusBack = false) => {
+        header.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.querySelector('.sr-only')!.textContent = open ? 'Close menu' : 'Menu';
+        document.documentElement.style.overflow = open ? 'hidden' : '';
+        if (open) nav.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });
+        else if (focusBack) toggle.focus();
+      };
+      toggle.addEventListener('click', () => set(!header.classList.contains('open')));
+      header.querySelector('.nav-scrim')?.addEventListener('click', () => set(false));
+      for (const a of nav.querySelectorAll('a')) a.addEventListener('click', () => set(false));
+      header.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && header.classList.contains('open')) set(false, true);
+      });
+      // Back to a wide screen: no menu state left behind.
+      matchMedia('(min-width: 834px)').addEventListener('change', (m) => m.matches && set(false));
     }
   });
 </script>
