@@ -5,8 +5,8 @@
 //   right and a move back slides it in from the left (global.css).
 // - The title: each page's main heading carries view-transition-name
 //   page-title, so it morphs from one page's title into the next. Clicking a
-//   section on Home hands the name to that section's heading instead, so the
-//   heading you clicked becomes the new page's title.
+//   section on Home, or a link in the nav, hands the name to what you clicked
+//   instead, so it becomes the new page's title.
 // - The staff stays put (Staff.astro).
 
 const ORDER = ['/', '/choral-contracting/', '/music/', '/software/'];
@@ -23,8 +23,12 @@ document.addEventListener('astro:before-preparation', (e) => {
   const staff = document.querySelector<HTMLCanvasElement>('canvas.staff');
   if (staff && window.scrollY > 2) staff.style.viewTransitionName = 'none';
 
-  const link = e.sourceElement instanceof Element ? e.sourceElement.closest('.area-link') : null;
-  const heading = link?.closest<HTMLElement>('h2');
+  // Clicking a Home section or a nav link hands the title's name to what you
+  // clicked, so it flies up and becomes the new page's title.
+  const src = e.sourceElement instanceof Element ? e.sourceElement : null;
+  const heading =
+    src?.closest('.area-link')?.closest<HTMLElement>('h2') ??
+    src?.closest<HTMLElement>('.nav-links a, .nav-name');
   const title = document.querySelector<HTMLElement>('[data-page-title]');
   if (heading && title) {
     title.style.viewTransitionName = 'none';
