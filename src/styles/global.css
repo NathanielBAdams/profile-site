@@ -457,6 +457,21 @@ img {
   }
 }
 
+/* Touch screens: no hover, so links answer the press itself, turning
+   vermilion under the finger. */
+@media (hover: none) {
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a:active,
+  .area:active .area-link,
+  .shows-photo:active {
+    color: var(--verm);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

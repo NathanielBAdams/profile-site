@@ -380,8 +380,79 @@
     if (e.pointerType === 'mouse') return;
     clearTimeout(tapTimer);
     const next = linkFor(e.target, true);
-    if (!next) return hide();
+    if (!next) {
+      // Tapping elsewhere lets go of a tapped line, not a scrolled-in one.
+      if (link && link.key !== revealed) hide();
+      return;
+    }
+    // Replaying the photo that's already revealed by scrolling: it stays.
+    if (next.key === revealed) {
+      p = 0;
+      return show(next);
+    }
     show(next);
-    tapTimer = window.setTimeout(hide, 2800);
+    tapTimer = window.setTimeout(() => (revealed ? reveal(revealed) : hide()), 2800);
+  });
+
+  // Touch screens have no hover, so scrolling stands in for it: when a photo
+  // of Nate reaches the middle of the screen, he lights up, "That's me"
+  // appears, and the line draws from his name in the nav; as it leaves, it
+  // all lets go. Only one photo at a time, the one nearest the middle.
+  const touchOnly = matchMedia('(hover: none)');
+  let watcher: IntersectionObserver | null = null;
+  let revealed: HTMLElement | null = null;
+  const nearMiddle = new Set<HTMLElement>();
+
+  function reveal(el: HTMLElement) {
+    const shape = el.querySelector('.me-shape');
+    if (shape) show(meLink(shape, true));
+  }
+
+  function pick() {
+    const mid = window.innerHeight / 2;
+    let best: HTMLElement | null = null;
+    let bestD = Infinity;
+    for (const el of nearMiddle) {
+      const r = el.getBoundingClientRect();
+      const d = Math.abs((r.top + r.bottom) / 2 - mid);
+      if (d < bestD) {
+        bestD = d;
+        best = el;
+      }
+    }
+    if (best === revealed) return;
+    const was = revealed;
+    revealed = best;
+    // Don't step on a line the visitor just tapped.
+    if (performance.now() < pinnedUntil || (link && link.key !== was && link.key !== best && dir > 0)) return;
+    if (best) reveal(best);
+    else if (link && link.key === was) hide();
+  }
+
+  function watch() {
+    watcher?.disconnect();
+    nearMiddle.clear();
+    revealed = null;
+    if (!touchOnly.matches || !('IntersectionObserver' in window)) return;
+    watcher = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const el = e.target as HTMLElement;
+          if (e.isIntersecting) nearMiddle.add(el);
+          else nearMiddle.delete(el);
+        }
+        pick();
+      },
+      // The middle third of the screen.
+      { rootMargin: '-33% 0px -33% 0px' },
+    );
+    document.querySelectorAll<HTMLElement>('.traced').forEach((el) => watcher!.observe(el));
+  }
+
+  document.addEventListener('astro:page-load', watch);
+  document.addEventListener('astro:before-swap', () => {
+    watcher?.disconnect();
+    nearMiddle.clear();
+    revealed = null;
   });
 </script>

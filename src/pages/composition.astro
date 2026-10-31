@@ -342,6 +342,20 @@ const jsonLd = {
     color: var(--verm);
   }
 
+  @media (hover: none) {
+    .watch:active .watch-thumb {
+      outline-color: var(--verm);
+    }
+
+    .watch:active img {
+      filter: none;
+    }
+
+    .watch:active .watch-label {
+      color: var(--verm);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .watch:hover img {
       transform: none;
