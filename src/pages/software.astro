@@ -1,89 +1,19 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Staff from '../components/Staff.astro';
-
-type Role = {
-  company: string;
-  url: string;
-  title: string;
-  years: string;
-  points: string[];
-};
-
-// From LinkedIn, kept to what each role changed. Newest first.
-const roles: Role[] = [
-  {
-    company: 'Datadog',
-    url: 'https://www.datadoghq.com/',
-    title: 'Software Engineer',
-    years: '2025 to now',
-    points: [
-      'Front-end engineering and product design for Cloud SIEM, building AI-assisted workflows for security teams.',
-    ],
-  },
-  {
-    company: 'CLEAR',
-    url: 'https://www.clearme.com/',
-    title: 'Software Engineer, I to III',
-    years: '2021 to 2025',
-    points: [
-      'Rebuilt the CLEAR Verified web app on CLEAR’s design system and TypeScript, with zero regressions and 30% more test coverage.',
-      'Built partner integrations for Uber and The Home Depot that cut equipment theft by 88% and signed up more than 500,000 Home Depot customers as CLEAR members.',
-      'Took CLEAR’s web verification app to production, leading its front-end authorization architecture, and cut about five seconds from verification.',
-      'Started the company’s design system and set up CI/CD for its front-end apps.',
-    ],
-  },
-];
-
-const tools = ['TypeScript', 'React', 'Node.js', 'Design systems', 'AWS', 'Terraform'];
-
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: 'Nate Adams',
-  alternateName: 'Nathaniel Adams',
-  url: new URL('/', Astro.site).href,
-  jobTitle: 'Software Engineer',
-  worksFor: { '@type': 'Organization', name: 'Datadog', url: 'https://www.datadoghq.com/' },
-  knowsAbout: ['Front-end engineering', 'Product design', 'Design systems', ...tools],
-  sameAs: ['https://www.linkedin.com/in/adamsnathaniel/'],
-};
 ---
 <Layout
   title="Nate Adams | Software Engineer, Front End and Design"
-  description="Nate Adams is a software engineer at Datadog working across front-end engineering and product design. Previously at CLEAR, where he rebuilt its web verification app and started its design system."
-  jsonLd={jsonLd}
+  description="Nate Adams is a software engineer at Datadog, working across front-end engineering and product design on AI-assisted workflows for Cloud SIEM. Previously at CLEAR."
 >
   <section class="header">
     <Staff />
     <div class="wrap header-inner">
       <h1 class="display origin staffed rise" data-page-title>Software</h1>
       <p class="lede staffed rise rise-2">
-        I’m a front-end engineer who works where engineering meets design. At Datadog I build
-        AI-assisted workflows for Cloud SIEM.
+        I work where front-end engineering meets product design, currently on AI-assisted
+        workflows.
       </p>
-    </div>
-  </section>
-
-  <section class="wrap block" aria-labelledby="experience">
-    <h2 id="experience" class="origin h2">Experience</h2>
-    <div class="roles">
-      {roles.map((r) => (
-        <article class="grid role">
-          <div class="lead">
-            <h3 class="role-company">
-              <a href={r.url} target="_blank" rel="noopener noreferrer">{r.company}</a>
-            </h3>
-            <ul class="role-points">
-              {r.points.map((p) => <li>{p}</li>)}
-            </ul>
-          </div>
-          <div class="rail role-meta">
-            <p>{r.title}</p>
-            <p class="muted">{r.years}</p>
-          </div>
-        </article>
-      ))}
     </div>
   </section>
 
@@ -92,12 +22,26 @@ const jsonLd = {
       <table class="table">
         <tbody>
           <tr>
-            <td>Tools</td>
-            <td>{tools.join(', ')}</td>
+            <td>Now</td>
+            <td>
+              At <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer">Datadog</a>,
+              working on Cloud SIEM
+            </td>
+          </tr>
+          <tr>
+            <td>Before</td>
+            <td>
+              At <a href="https://www.clearme.com/" target="_blank" rel="noopener noreferrer">CLEAR</a>,
+              2021 to 2025, where I helped start its design system
+            </td>
+          </tr>
+          <tr>
+            <td>Focus</td>
+            <td>Front-end engineering, product design, design systems, and AI-assisted workflows</td>
           </tr>
           <tr>
             <td>Elsewhere</td>
-            <td><a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer">LinkedIn</a></td>
+            <td><a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer">Full history on LinkedIn</a></td>
           </tr>
         </tbody>
       </table>
@@ -106,90 +50,6 @@ const jsonLd = {
 </Layout>
 
 <style>
-  .role {
-    border-top: 2px solid var(--ink);
-    padding: 1.4rem 0 2.25rem;
-    row-gap: 1rem;
-  }
-
-  .role:last-child {
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .role-company {
-    font-size: clamp(2rem, 4.4vw, 3.4rem);
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 0.95;
-  }
-
-  .role-company a {
-    color: inherit;
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .role-company a:hover {
-    color: var(--verm);
-  }
-
-  .role-points {
-    margin: 1.1rem 0 0;
-    padding: 0;
-    list-style: none;
-    max-width: 38rem;
-    display: grid;
-    gap: 0.7rem;
-  }
-
-  .role-points li {
-    position: relative;
-    padding-left: 1.1rem;
-  }
-
-  .role-points li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.72em;
-    width: 0.45rem;
-    height: 2px;
-    background: var(--verm);
-  }
-
-  .role-meta {
-    display: grid;
-    gap: 0.3rem;
-    align-content: start;
-  }
-
-  /* On narrow screens the title and years sit right under the company,
-     before the points. */
-  @media (max-width: 833px) {
-    .role {
-      row-gap: 0.9rem;
-    }
-
-    .role .lead {
-      display: contents;
-    }
-
-    .role-company,
-    .role-points {
-      grid-column: 1 / -1;
-    }
-
-    .role-meta {
-      order: 1;
-      gap: 0.1rem;
-    }
-
-    .role-points {
-      order: 2;
-      margin-top: 0.2rem;
-    }
-  }
-
   .rows {
     padding-bottom: clamp(4rem, 9vw, 7rem);
   }
