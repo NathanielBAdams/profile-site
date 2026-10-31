@@ -342,17 +342,10 @@ img {
 }
 
 /* Between pages (Astro's client router; see src/scripts/transitions.ts).
-   The nav and the staff hold still, the page title morphs into the next one,
-   and the content slides a short way in the direction of travel. */
+   The nav and the staff hold still, and the content slides a short way in
+   the direction of travel. */
 .nav {
   view-transition-name: nav;
-}
-
-/* An inline-block span around the title's words, so the morph runs between
-   the words themselves (not the full-width heading box, and not its rule). */
-[data-page-title] {
-  display: inline-block;
-  view-transition-name: page-title;
 }
 
 /* Entrance animations are for a fresh load; after a page change the
@@ -363,20 +356,6 @@ img {
 
 ::view-transition {
   background: var(--paper);
-}
-
-::view-transition-group(page-title) {
-  animation-duration: 0.62s;
-  animation-timing-function: var(--ease);
-}
-
-/* Cross-fade in the middle of the flight. */
-::view-transition-old(page-title) {
-  animation: vt-out 0.36s ease-in-out 0.06s both;
-}
-
-::view-transition-new(page-title) {
-  animation: vt-in-still 0.36s ease-in-out 0.14s both;
 }
 
 ::view-transition-old(root) {
