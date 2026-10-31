@@ -9,6 +9,9 @@ import Traced from '../components/Traced.astro';
 import conductingOutline from '../data/outlines/nate-adams-conducting.json';
 import hmmOutline from '../data/outlines/his-majestys-men-chicago-2023.json';
 
+const bio =
+  'Nathaniel Adams is a New York-based vocalist equally comfortable in classical and jazz idioms. He performs regularly with elite ensembles including the Saint Thomas Choir of Men and Boys, the New York Philharmonic, Musica Sacra, and Clarion Music Society. In addition to his performance career, Nathaniel is a widely commissioned and published composer whose choral works have been performed across the U.S. and internationally in venues ranging from Lincoln Center to choral festivals in Colombia and China. He is a Resident Composer with the St. Charles Singers and has had works premiered by leading American choirs and vocal ensembles.';
+
 type Work = {
   title: string;
   subtitle?: string;
@@ -108,6 +111,21 @@ const jsonLd = {
   }),
 };
 ---
+<script>
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+    btn.addEventListener('click', async () => {
+      const text = document.getElementById(btn.dataset.copy!)?.textContent?.trim() ?? '';
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied';
+      } catch {
+        btn.textContent = 'Select the text to copy';
+      }
+      setTimeout(() => (btn.textContent = 'Copy bio'), 1800);
+    });
+  }
+</script>
+
 <Layout
   title="Nathaniel Adams | Choral Composer"
   description="Choral music by NYC composer Nathaniel Adams, published by Walton Music and Gentry Publications: He Came All So Still (SATB), Lux Brumalis (SATB and piano), and Black Is the Color (SSAA)."
@@ -120,6 +138,17 @@ const jsonLd = {
       <p class="lede staffed rise rise-2">
         I write music for choirs and voices, and I sing professionally in New York.
       </p>
+    </div>
+  </section>
+
+  <section class="wrap block" aria-labelledby="bio-title">
+    <h2 id="bio-title" class="origin h2">Bio</h2>
+    <div class="grid bio">
+      <p class="lead bio-text" id="bio-text"><Linked text={bio} /></p>
+      <div class="rail">
+        <p class="muted bio-note">For programs and press.</p>
+        <button class="bio-copy" type="button" data-copy="bio-text">Copy bio</button>
+      </div>
     </div>
   </section>
 
@@ -229,5 +258,34 @@ const jsonLd = {
 
   .video {
     max-width: 56rem;
+  }
+
+  .bio {
+    row-gap: 1.25rem;
+  }
+
+  .bio-text {
+    max-width: 40rem;
+    font: 400 clamp(1.1rem, 1.6vw, 1.3rem)/1.55 var(--head);
+  }
+
+  .bio-note {
+    margin-bottom: 0.6rem;
+  }
+
+  .bio-copy {
+    font: 600 0.9rem/1 var(--head);
+    padding: 0.6rem 0.9rem;
+    color: var(--ink);
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .bio-copy:hover,
+  .bio-copy:focus-visible {
+    color: var(--verm);
+    border-color: var(--verm);
   }
 </style>
