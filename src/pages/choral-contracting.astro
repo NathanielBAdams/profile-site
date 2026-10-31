@@ -6,7 +6,6 @@ import Traced from '../components/Traced.astro';
 import bandOutline from '../data/outlines/choral-contracting-hero.json';
 import zimmerOutline from '../data/outlines/nate-adams-hans-zimmer-2017.json';
 import singersOutline from '../data/outlines/radio-city-hans-zimmer-singers-2017.json';
-import fallonOutline from '../data/outlines/tonight-show-starring-jimmy-fallon.json';
 
 // What I book singers for. Shown on the page and listed in the structured
 // data, so search engines see the same services a visitor does.
@@ -62,18 +61,10 @@ const collaborators = [
 const shows: Record<string, string> = {
   'Carnegie Hall': 'carnegie-hall',
   'Radio City Music Hall': 'radio-city',
-  'The Tonight Show Starring Jimmy Fallon': 'tonight-show',
 };
-const venues = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall', 'Lincoln Center'];
-const media = ['The Tonight Show Starring Jimmy Fallon', 'The Daily Show'];
-const clients = ['NBC Universal', 'Accenture', 'Sundance Film Festival'];
 const mailto = 'mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry';
 const dev = import.meta.env.DEV;
 const contracted = ['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall'];
-const creditGroups = [
-  { label: 'Choirs contracted', names: contracted },
-  { label: 'On stage and on camera', names: [...venues, ...media, ...clients].filter((n) => !contracted.includes(n)) },
-];
 ---
 <Layout
   title="NYC Choral Contractor: Hire a Choir or Singers | Nate Adams"
@@ -160,16 +151,16 @@ const creditGroups = [
 
   <section class="wrap grid block">
     <div class="lead">
-      <h2 class="origin h2">Credits</h2>
-      {creditGroups.map((g) => (
-        <div class="credit-group">
-          <p class="label">{g.label}</p>
-          <ul class="credit-list">
-            {g.names.map((name) => <li data-shows={shows[name]}>{name}</li>)}
-          </ul>
-        </div>
-      ))}
-      <div class="photos" style="--cols: 9fr 12fr">
+      <h2 class="origin h2">Choirs contracted</h2>
+      <ul class="credit-list">
+        {contracted.map((name) => <li data-shows={shows[name]}>{name}</li>)}
+      </ul>
+      <p class="also">
+        I also sing with ensembles across New York. See <a href="/performance/">Performance</a>.
+      </p>
+    </div>
+    <div class="rail">
+      <div class="photos">
         <figure data-photo="carnegie-hall">
           <div class="photo-frame">
             <img
@@ -183,20 +174,7 @@ const creditGroups = [
           </div>
           <figcaption>Final Fantasy at Carnegie Hall, from inside the choir I put together.</figcaption>
         </figure>
-        <figure data-photo="tonight-show vampire-weekend">
-          <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
-          <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
-        </figure>
       </div>
-    </div>
-    <div class="rail highlights">
-      <h2 class="origin h2">Selected work</h2>
-      <ul class="list">
-        <li>Sang with the Clarion Music Society at the 2018 Met Gala, performing with Madonna</li>
-        <li data-shows="vampire-weekend">Sang backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon</li>
-        <li>Regular concerts with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
-        <li>Music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
-      </ul>
     </div>
   </section>
 
@@ -235,24 +213,6 @@ const creditGroups = [
     letter-spacing: -0.03em;
   }
 
-  .highlights {
-    margin-top: 3rem;
-  }
-
-  @media (min-width: 834px) {
-    .highlights {
-      margin-top: 0;
-    }
-  }
-
-  .credit-group + .credit-group {
-    margin-top: 2rem;
-  }
-
-  .credit-group .label {
-    margin-bottom: 0.6rem;
-  }
-
   .credit-list {
     list-style: none;
     margin: 0;
@@ -263,6 +223,21 @@ const creditGroups = [
   .credit-list li {
     padding: 0.85rem 0;
     border-bottom: 1px solid var(--rule);
+  }
+
+  .also {
+    margin-top: 1.5rem;
+    color: var(--muted);
+  }
+
+  .rail .photos {
+    margin-top: 2.5rem;
+  }
+
+  @media (min-width: 834px) {
+    .rail .photos {
+      margin-top: 0;
+    }
   }
 
   .hire-intro {

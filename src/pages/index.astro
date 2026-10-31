@@ -13,10 +13,10 @@ const jsonLd = {
   alternateName: 'Nathaniel Adams',
   url: home,
   image: new URL('/images/profile-photo.jpg', Astro.site).href,
-  jobTitle: ['Choral Contractor', 'Composer', 'Software Engineer'],
+  jobTitle: ['Choral Contractor', 'Composer', 'Vocalist', 'Software Engineer'],
   worksFor: { '@type': 'Organization', name: 'Datadog', url: 'https://www.datadoghq.com/' },
   address: { '@type': 'PostalAddress', addressLocality: 'New York', addressRegion: 'NY', addressCountry: 'US' },
-  knowsAbout: ['Choral contracting', 'Choral composition', 'Software engineering'],
+  knowsAbout: ['Choral contracting', 'Choral composition', 'Choral singing', 'Software engineering'],
   sameAs: ['https://www.linkedin.com/in/adamsnathaniel/'],
 };
 
@@ -27,9 +27,14 @@ const areas = [
     text: 'I hire and coordinate professional singers for television tapings, concerts, and events, from a quartet to a full chorus.',
   },
   {
-    title: 'Music',
-    href: '/music/',
-    text: 'I write choral music, including Lux Brumalis and He Came All So Still, and sing professionally in New York.',
+    title: 'Composition',
+    href: '/composition/',
+    text: 'I write choral music, including Lux Brumalis and He Came All So Still, published by Walton Music and Gentry Publications.',
+  },
+  {
+    title: 'Performance',
+    href: '/performance/',
+    text: 'I sing with ensembles across New York, including the New York Philharmonic, Musica Sacra, and Clarion Music Society.',
   },
   {
     title: 'Software',
@@ -39,8 +44,8 @@ const areas = [
 ];
 ---
 <Layout
-  title="Nate Adams | NYC Choral Contractor, Composer & Software Engineer"
-  description="Nate Adams is a NYC-based choral contractor, composer, and software engineer. He hires choirs and vocalists for live tapings, concerts, and events at venues including Carnegie Hall, Radio City, and Madison Square Garden."
+  title="Nate Adams | NYC Choral Contractor, Composer, Singer & Software Engineer"
+  description="Nate Adams is a NYC-based choral contractor, composer, singer, and software engineer. He hires choirs and vocalists for live tapings, concerts, and events at venues including Carnegie Hall, Radio City, and Madison Square Garden."
   image="/images/profile-photo.jpg"
   jsonLd={jsonLd}
 >
@@ -49,7 +54,7 @@ const areas = [
     <div class="wrap hero-inner">
       <h1 class="name staffed rise" data-me-name="title" data-page-title>Nate Adams</h1>
       <p class="lede staffed rise rise-2" data-staff-quiet>
-          <a class="role" href="/choral-contracting/">Choral contractor</a>, <a class="role" href="/music/">composer</a>, and <a class="role" href="/software/">software engineer</a> in New York City.
+          <a class="role" href="/choral-contracting/">Choral contractor</a>, <a class="role" href="/composition/">composer</a>, <a class="role" href="/performance/">singer</a>, and <a class="role" href="/software/">software engineer</a> in New York City.
       </p>
       <div class="grid below">
         <p class="lead hint">Click the staff to hear a note, or click a chord.</p>
@@ -208,7 +213,13 @@ const areas = [
 
   @media (min-width: 834px) {
     .area {
-      grid-column: span 4;
+      grid-column: span 6;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .area {
+      grid-column: span 3;
     }
   }
 </style>

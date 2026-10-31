@@ -5,4 +5,8 @@ export default defineConfig({
   site: 'https://www.nathaniel-adams.com',
   trailingSlash: 'always',
   integrations: [sitemap()],
+  // The Music page became Composition (singing moved to Performance).
+  redirects: {
+    '/music': '/composition/',
+  },
 });
