@@ -11,10 +11,10 @@ import fallonOutline from '../data/outlines/tonight-show-starring-jimmy-fallon.j
 // What I book singers for. Shown on the page and listed in the structured
 // data, so search engines see the same services a visitor does.
 const services = [
-  { name: 'Television tapings', text: 'Choirs and backup singers for network and late-night television, including The Tonight Show and The Daily Show.' },
-  { name: 'Concerts', text: 'Choirs for orchestral and film-score concerts at venues like Carnegie Hall and Radio City Music Hall.' },
+  { name: 'Television tapings', text: 'Choirs and backup singers for network and late-night television.' },
+  { name: 'Concerts', text: 'Choirs for concert stages, from Carnegie Hall to Madison Square Garden.' },
   { name: 'Recording sessions', text: 'Singers for studio and location recordings, from a few voices to a full chorus.' },
-  { name: 'Corporate events', text: 'Ensembles for corporate events and launches, for clients including Accenture and NBC Universal.' },
+  { name: 'Events', text: 'Ensembles for corporate events, galas, and launches.' },
 ];
 
 const jsonLd = {
@@ -69,11 +69,12 @@ const media = ['The Tonight Show Starring Jimmy Fallon', 'The Daily Show'];
 const clients = ['NBC Universal', 'Accenture', 'Sundance Film Festival'];
 const mailto = 'mailto:nathanielbadams@gmail.com?subject=Choral%20contracting%20inquiry';
 const dev = import.meta.env.DEV;
-const credits = [
-  ...venues.map((name) => ({ type: 'Venue', name })),
-  ...media.map((name) => ({ type: 'Television', name })),
-  ...clients.map((name) => ({ type: 'Client', name })),
-];
+// Where I contracted the choir (and sang in it), and where I sang.
+const contracted = new Set(['Carnegie Hall', 'Madison Square Garden', 'Radio City Music Hall']);
+const credits = [...venues, ...media, ...clients].map((name) => ({
+  name,
+  role: contracted.has(name) ? 'Contracted and sang' : 'Sang',
+}));
 ---
 <Layout
   title="NYC Choral Contractor: Hire a Choir or Singers | Nate Adams"
@@ -93,13 +94,13 @@ const credits = [
     </div>
   </section>
 
-  <Traced outline={bandOutline} alt="Nate Adams with a vocal ensemble during a professional recording session in New York City. Nate is in the plaid shirt and cap, giving a thumbs up." cover label lazy={false} />
+  <Traced outline={bandOutline} alt="Nate Adams with a vocal ensemble he contracted for a recording session in New York City. Nate is in the plaid shirt and cap, giving a thumbs up." cover label lazy={false} />
 
   <section class="wrap grid block">
     <div class="lead">
       <p class="prose">
-        Since 2010 I've hired singers for television, concerts, and corporate events, working with
-        producers and music directors to find the right voices for each project.
+        Since 2010 I've worked with producers and music directors to find the right voices for each
+        project, on stage, in the studio, and on camera.
       </p>
     </div>
     <div class="rail since">
@@ -161,12 +162,12 @@ const credits = [
   <section class="wrap grid block">
     <div class="lead">
       <h2 class="origin h2">Credits</h2>
-      <table class="table">
+      <table class="table credits">
         <thead>
-          <tr><th scope="col">Type</th><th scope="col">Name</th></tr>
+          <tr><th scope="col">Name</th><th scope="col">Role</th></tr>
         </thead>
         <tbody>
-          {credits.map((c) => <tr data-shows={shows[c.name]}><td>{c.type}</td><td data-shows-text>{c.name}</td></tr>)}
+          {credits.map((c) => <tr data-shows={shows[c.name]}><td data-shows-text>{c.name}</td><td>{c.role}</td></tr>)}
         </tbody>
       </table>
       <div class="photos" style="--cols: 9fr 12fr">
@@ -243,6 +244,16 @@ const credits = [
     .highlights {
       margin-top: 0;
     }
+  }
+
+  /* Credits: the name leads, the role is quieter. */
+  .credits td:first-child {
+    color: var(--ink);
+    width: 62%;
+  }
+
+  .credits td:last-child {
+    color: var(--muted);
   }
 
   .hire-intro {
