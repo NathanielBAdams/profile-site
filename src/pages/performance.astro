@@ -74,6 +74,8 @@ const jsonLd = {
     </div>
   </section>
 
+  <Traced outline={hmmOutline} alt="Nate Adams, second from left in glasses, singing with His Majesty's Men in Chicago, August 2023: five men in black shirts at music stands in front of a gilded church altar, the audience in the foreground" cover label lazy={false} />
+
   <section class="wrap block" aria-labelledby="bio-title">
     <h2 id="bio-title" class="origin h2">Bio</h2>
     <div class="grid bio">
@@ -112,20 +114,12 @@ const jsonLd = {
         <li>Regular concerts with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
         <li>Music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
       </ul>
-    </div>
-  </section>
-
-  <section class="wrap">
-    <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
-    <div class="photos" style="--cols: 9fr 18fr">
-      <figure data-photo="tonight-show vampire-weekend">
-        <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
-        <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
-      </figure>
-      <figure>
-        <Traced outline={hmmOutline} alt="Nate Adams, second from left in glasses, singing with His Majesty's Men, five men in black shirts at music stands in front of a gilded church altar in Chicago, the audience in the foreground" label />
-        <figcaption>Singing with <Linked text="His Majesty's Men" />, Chicago, August 2023.</figcaption>
-      </figure>
+      <div class="photos">
+        <figure data-photo="tonight-show vampire-weekend">
+          <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
+          <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
