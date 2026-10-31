@@ -24,19 +24,16 @@ const areas = [
   {
     title: 'Choral contracting',
     href: '/choral-contracting/',
-    link: 'Credits and booking',
     text: 'I hire and coordinate professional singers for television tapings, concerts, and events, from a quartet to a full chorus.',
   },
   {
     title: 'Music',
     href: '/music/',
-    link: 'Published works',
     text: 'I write choral music, including Lux Brumalis and He Came All So Still, and sing professionally in New York.',
   },
   {
     title: 'Software',
     href: '/software/',
-    link: 'More about my work',
     text: 'I work on front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM.',
   },
 ];
@@ -69,9 +66,8 @@ const areas = [
   <section class="wrap grid areas">
     {areas.map((a) => (
       <article class="area">
-        <h2 class="origin h2">{a.title}</h2>
+        <h2 class="origin h2"><a class="area-link" href={a.href}><span>{a.title}</span></a></h2>
         <p>{a.text}</p>
-        <a href={a.href}>{a.link}</a>
       </article>
     ))}
   </section>
@@ -164,9 +160,50 @@ const areas = [
     grid-column: 1 / -1;
   }
 
+  .area {
+    position: relative;
+  }
+
   .area p {
     color: var(--muted);
-    margin-bottom: 1rem;
+  }
+
+  /* The heading links to its page; the link covers the whole block, so the
+     text is clickable too. Plain until hovered, like the roles above. */
+  .area-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  /* Scale the inner span, not the link: a transform on the link would trap
+     its ::after inside it. */
+  .area-link span {
+    display: inline-block;
+    transform-origin: 0 80%;
+    transition: transform 0.2s var(--ease);
+  }
+
+  .area-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .area:hover .area-link,
+  .area-link:focus-visible {
+    color: var(--verm);
+  }
+
+  .area:hover .area-link span,
+  .area-link:focus-visible span {
+    transform: scale(1.025);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .area-link span {
+      transform: none !important;
+    }
   }
 
   @media (min-width: 834px) {
