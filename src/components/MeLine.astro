@@ -304,21 +304,34 @@
     dot.style.opacity = '0';
   });
 
-  // The big name on Home: hovering it draws the same line to Nate in the
-  // page's main photo, and lights him up as if the photo were hovered.
+  // His name (the big one on Home, or the small one in the nav): hovering it
+  // circles that name and draws the line to Nate in the page's main photo,
+  // lighting him up as if the photo were hovered. Pages without a photo of
+  // him (Software) do nothing.
   function nameLink(name: HTMLElement): Link | null {
-    const el = document.querySelector<HTMLElement>('.traced.cover') ?? document.querySelector<HTMLElement>('.traced');
+    // A photo of him on screen if there is one, otherwise the page's main one.
+    const navBottom = document.querySelector('.nav')?.getBoundingClientRect().bottom ?? 0;
+    const shown = [...document.querySelectorAll<HTMLElement>('.traced')].find((t) => {
+      const r = t.getBoundingClientRect();
+      return r.bottom > navBottom + 40 && r.top < window.innerHeight - 40;
+    });
+    // None on screen: the next one down the page, else the main one above.
+    const below = [...document.querySelectorAll<HTMLElement>('.traced')].find((t) => t.getBoundingClientRect().top >= window.innerHeight - 40);
+    const el = shown ?? below ?? document.querySelector<HTMLElement>('.traced.cover') ?? document.querySelector<HTMLElement>('.traced');
     if (!el) return null;
     const to = () => {
+      const r = el.getBoundingClientRect();
       const p = landing(el);
-      // Below the screen: run the stroke off the bottom edge toward him.
-      return p.y > window.innerHeight - 8 ? { x: p.x, y: window.innerHeight + 40, label: true } : p;
+      // Off screen: run the stroke off that edge toward him.
+      if (r.top > window.innerHeight - 8 || p.y > window.innerHeight - 8) return { x: p.x, y: window.innerHeight + 40, label: true };
+      if (r.bottom < navBottom + 8) return { x: p.x, y: -40, label: true };
+      return p;
     };
-    return { key: name, from: nameRect, to, mark: el, cls: 'is-active' };
+    return { key: name, from: () => textRect(name), to, mark: el, cls: 'is-active' };
   }
 
   const nameOf = (t: EventTarget | null) =>
-    t instanceof Element ? t.closest<HTMLElement>('[data-me-name="title"]') : null;
+    t instanceof Element ? t.closest<HTMLElement>('[data-me-name]') : null;
 
   const shapeOf = (t: EventTarget | null) =>
     t instanceof Element ? t.closest<SVGPathElement>('.me-shape') : null;
