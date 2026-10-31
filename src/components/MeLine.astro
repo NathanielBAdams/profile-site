@@ -53,6 +53,15 @@
     opacity: 0;
   }
 
+  /* Phones: a finer, lighter line, so it doesn't compete with the text it
+     crosses. */
+  @media (max-width: 833px) {
+    path {
+      stroke-width: 1;
+      stroke-opacity: 0.55;
+    }
+  }
+
   /* A photo a credit is pointing at gets a thin vermilion frame. */
   /* On the photo's wrapper, not the image, so the grayscale filter on the
      image doesn't gray out the frame. */
