@@ -34,11 +34,11 @@ const { staves = 2, center = 0.56 } = Astro.props;
     display: none;
   }
 
-  /* Phones: the staff leaves the text and gets its own band under the
-     header, full strength and easy to tap. */
+  /* Phones: the staff appears on Home only, as a slim band of its own under
+     the intro, easy to tap. The other pages open straight into their content
+     (the canvas stays, hidden, so a chord can ring on across pages). */
   @media (max-width: 833px) {
-    :global(.hero:has(> .staff)),
-    :global(.header:has(> .staff)) {
+    :global(.hero:has(> .staff)) {
       display: flex;
       flex-direction: column;
     }
@@ -46,9 +46,13 @@ const { staves = 2, center = 0.56 } = Astro.props;
     .staff {
       position: relative;
       order: 2;
-      height: 11.5rem;
-      margin-bottom: 1rem;
+      height: 9.5rem;
+      margin-bottom: 0.75rem;
       touch-action: pan-y;
+    }
+
+    :global(.header) > .staff {
+      display: none;
     }
   }
 
@@ -167,7 +171,8 @@ const { staves = 2, center = 0.56 } = Astro.props;
     // centers at data-center.
     function target(): Geom {
       if (band.matches && staves === 2) {
-        const g = Math.max(10, Math.min(13, H / 14));
+        if (!H || !W) return { gap: 10, tops: [0, 80] };
+        const g = Math.max(9, Math.min(11.5, H / 14));
         const top = H / 2 - g * 6;
         return { gap: g, tops: [top, top + g * 8] };
       }

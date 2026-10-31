@@ -426,10 +426,9 @@ img {
    max-width: 833px, so the desktop layout (guarded by the screenshot tests in
    tests/visual) can't change by accident. */
 @media (max-width: 833px) {
-  /* The staff follows the header text as its own band (Staff.astro). */
   .header-inner {
     padding-top: 2.75rem;
-    padding-bottom: 1.75rem;
+    padding-bottom: 2.5rem;
   }
 
   /* Photo rows: two portraits side by side, landscapes (.wide) across the

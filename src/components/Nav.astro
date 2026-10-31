@@ -11,7 +11,6 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
   <div class="wrap nav-inner">
     <a class="nav-name" href="/" data-me-name="nav">Nate Adams</a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
-      <span class="nav-toggle-word" aria-hidden="true"><span>Menu</span><span>Close</span></span>
       <span class="nav-toggle-lines" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="sr-only">Menu</span>
     </button>
@@ -129,8 +128,8 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
   }
 
   /* Phones only (everything below lives behind this breakpoint, so desktop
-     never sees it). The links fold into a menu: the button's three lines are
-     a little staff, which turns into a close mark; the panel's rows draw in
+     never sees it). The links fold into a menu: the button's three lines (a
+     little staff) turn into a close mark; the panel's rows draw in
      left to right like staff lines, and the current page gets the vermilion
      rule. */
   .nav-toggle,
@@ -158,9 +157,8 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
     .nav-toggle {
       display: inline-flex;
       align-items: center;
-      gap: 0.65rem;
-      margin: -0.5rem -0.5rem -0.5rem 0;
-      padding: 0.5rem;
+      margin: -0.75rem -0.75rem -0.75rem 0;
+      padding: 0.75rem;
       border: 0;
       background: none;
       color: var(--ink);
@@ -169,27 +167,10 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* "Menu" and "Close" share one slot and swap with a short slide. */
-    .nav-toggle-word {
-      display: grid;
-      overflow: hidden;
-      text-align: right;
-    }
-
-    .nav-toggle-word > span {
-      grid-area: 1 / 1;
-      transition: transform 0.35s var(--ease), opacity 0.25s ease;
-    }
-
-    .nav-toggle-word > span + span {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-
     .nav-toggle-lines {
       position: relative;
-      width: 1.25rem;
-      height: 0.8rem;
+      width: 1.4rem;
+      height: 0.85rem;
     }
 
     .nav-toggle-lines i {
@@ -205,18 +186,8 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
     .nav-toggle-lines i:nth-child(2) { top: calc(50% - 0.75px); transform-origin: right center; }
     .nav-toggle-lines i:nth-child(3) { bottom: 0; }
 
-    .nav.open .nav-toggle-word > span:first-child {
-      transform: translateY(-100%);
-      opacity: 0;
-    }
-
-    .nav.open .nav-toggle-word > span + span {
-      transform: none;
-      opacity: 1;
-    }
-
     .nav.open .nav-toggle-lines i:nth-child(1) {
-      transform: translateY(calc(0.4rem - 0.75px)) rotate(45deg);
+      transform: translateY(calc(0.425rem - 0.75px)) rotate(45deg);
       background: var(--verm);
     }
 
@@ -226,7 +197,7 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
     }
 
     .nav.open .nav-toggle-lines i:nth-child(3) {
-      transform: translateY(calc(-0.4rem + 0.75px)) rotate(-45deg);
+      transform: translateY(calc(-0.425rem + 0.75px)) rotate(-45deg);
       background: var(--verm);
     }
 
@@ -402,6 +373,8 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
         toggle.setAttribute('aria-expanded', String(open));
         toggle.querySelector('.sr-only')!.textContent = open ? 'Close menu' : 'Menu';
         document.documentElement.style.overflow = open ? 'hidden' : '';
+        // The photo line steps aside while the menu is open (MeLine.astro).
+        document.dispatchEvent(new CustomEvent('nav:menu', { detail: { open } }));
         if (open) nav.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });
         else if (focusBack) toggle.focus();
       };

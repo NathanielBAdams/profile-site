@@ -114,6 +114,29 @@ const jsonLd = {
 ---
 
 <script>
+  // Phones: each work is a row that opens to show the rest (see the styles).
+  document.addEventListener('astro:page-load', () => {
+    for (const work of document.querySelectorAll<HTMLElement>('.work')) {
+      const toggle = work.querySelector<HTMLButtonElement>('.work-toggle');
+      if (!toggle) continue;
+      const set = (open: boolean) => {
+        work.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      };
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        set(!work.classList.contains('open'));
+      });
+      // The whole closed row is a target, not just the caret.
+      work.addEventListener('click', (e) => {
+        if (getComputedStyle(toggle).display === 'none') return;
+        if ((e.target as Element).closest('a, button, iframe, .sc, .watch')) return;
+        if (!work.classList.contains('open')) set(true);
+        else if ((e.target as Element).closest('.work-title')) set(false);
+      });
+    }
+  });
+
   // "Watch the performance" glides down to its video instead of jumping,
   // then readies the play button for the keyboard.
   document.addEventListener('astro:page-load', () => {
@@ -151,13 +174,17 @@ const jsonLd = {
       <h2 id={list.id} class="origin h2">{list.heading}</h2>
       <div class="works">
         {list.works.map((w) => (
-          <article class="grid work">
+          <article class="grid work" id={`work-${slug(w.title)}`}>
+            <button class="work-toggle" type="button" aria-expanded="false" aria-controls={`work-${slug(w.title)}`}>
+              <span class="sr-only">More about {w.title}</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6" /></svg>
+            </button>
             <div class="lead">
               <h3 class="work-title">{w.title}</h3>
-              {w.subtitle && <p class="work-sub">{w.subtitle}</p>}
-              {w.details && <p class="work-details"><Linked text={w.details} /></p>}
+              {w.subtitle && <p class="work-sub more">{w.subtitle}</p>}
+              {w.details && <p class="work-details more"><Linked text={w.details} /></p>}
               {(w.listen || w.video) && (
-                <div class="work-listen">
+                <div class="work-listen more">
                   {w.listen && <SoundCloud url={w.listen} title={w.title} set={w.set} />}
                   {w.video && (
                     <a class="watch" href={`#video-${slug(w.title)}`} data-smooth>
@@ -179,7 +206,7 @@ const jsonLd = {
               {w.ensemble && <p class="muted"><Linked text={w.ensemble} /></p>}
               {w.publisher && <p class="muted">{w.publisher}{w.catalog && `, ${w.catalog}`}</p>}
               {w.url && (
-                <p class="links">
+                <p class="links more">
                   <a href={w.url} target="_blank" rel="noopener noreferrer">View the score</a>
                 </p>
               )}
@@ -251,6 +278,104 @@ const jsonLd = {
 
   .video {
     max-width: 56rem;
+  }
+
+  /* Phones only: the works become a list of rows (title, voicing, and
+     publisher or ensemble) that open with the caret to show the rest. */
+  .work-toggle,
+  .sr-only {
+    display: none;
+  }
+
+  @media (max-width: 833px) {
+    .sr-only {
+      display: block;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .work {
+      position: relative;
+      padding: 1rem 0 1.15rem;
+      row-gap: 0.4rem;
+      cursor: pointer;
+    }
+
+    .work.open {
+      cursor: auto;
+      padding-bottom: 1.75rem;
+      row-gap: 1rem;
+    }
+
+    .work-title {
+      font-size: clamp(1.6rem, 7vw, 2rem);
+      padding-right: 2.75rem;
+    }
+
+    .work-meta {
+      gap: 0.1rem;
+      font-size: 0.95rem;
+    }
+
+    .work .more {
+      display: none;
+    }
+
+    .work.open .more {
+      display: block;
+      animation: work-open 0.45s var(--ease) both;
+    }
+
+    .work.open .work-listen.more {
+      display: flex;
+    }
+
+    .work-toggle {
+      display: grid;
+      place-items: center;
+      position: absolute;
+      top: 0.55rem;
+      right: -0.6rem;
+      width: 2.75rem;
+      height: 2.75rem;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--ink);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .work-toggle svg {
+      width: 1.3rem;
+      height: 1.3rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.35s var(--ease), stroke 0.2s ease;
+    }
+
+    .work.open .work-toggle svg {
+      transform: rotate(180deg);
+      stroke: var(--verm);
+    }
+
+    .work:active .work-title {
+      color: var(--verm);
+    }
+  }
+
+  @keyframes work-open {
+    from {
+      opacity: 0;
+      transform: translateY(-0.4rem);
+    }
   }
 
   .video-block {

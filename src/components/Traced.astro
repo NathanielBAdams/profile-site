@@ -132,6 +132,7 @@ const ny = (by + bh / 2) / h;
     .traced.cover {
       height: min(80vw, 26rem);
       --iw: max(155cqw, 100cqh * var(--w) / var(--h));
+      --ih: calc(var(--iw) * var(--h) / var(--w));
       --ox: clamp(100cqw - var(--iw), 50cqw - var(--iw) * var(--nx), 0px);
       --oy: clamp(100cqh - var(--ih), 50cqh - var(--ih) * var(--ny), 0px);
     }

@@ -273,7 +273,13 @@
   // is-active does the same for a tap.
   function meLink(shape: Element, touch: boolean): Link {
     const el = shape.closest<HTMLElement>('.traced')!;
-    return { key: el, from: nameRect, to: () => landing(el), mark: el, cls: touch ? 'is-active' : 'is-hovered' };
+    // On touch the line always starts at the small name in the nav, so it
+    // never cuts through the intro text on Home.
+    const navName = () => {
+      const n = document.querySelector('[data-me-name="nav"]');
+      return n ? textRect(n) : nameRect();
+    };
+    return { key: el, from: touch ? navName : nameRect, to: () => landing(el), mark: el, cls: touch ? 'is-active' : 'is-hovered' };
   }
 
   // A credit: circle it, land on its photo, frame the photo.
@@ -347,7 +353,7 @@
   };
 
   document.addEventListener('pointerover', (e) => {
-    if (e.pointerType !== 'mouse' || performance.now() < pinnedUntil) return;
+    if (e.pointerType !== 'mouse' || performance.now() < pinnedUntil || menuOpen) return;
     const next = linkFor(e.target, false);
     if (next) show(next);
   });
@@ -420,7 +426,7 @@
         best = el;
       }
     }
-    if (best === revealed) return;
+    if (menuOpen || best === revealed) return;
     const was = revealed;
     revealed = best;
     // Don't step on a line the visitor just tapped.
@@ -443,13 +449,29 @@
         }
         pick();
       },
-      // The middle third of the screen.
-      { rootMargin: '-33% 0px -33% 0px' },
+      // The middle fifth of the screen, so a photo reveals once it's well
+      // into view rather than as soon as it peeks in.
+      { rootMargin: '-40% 0px -40% 0px' },
     );
     document.querySelectorAll<HTMLElement>('.traced').forEach((el) => watcher!.observe(el));
   }
 
   document.addEventListener('astro:page-load', watch);
+
+  // The phone menu covers the page: let go of any line while it's open, and
+  // pick back up when it closes.
+  let menuOpen = false;
+  document.addEventListener('nav:menu', (e) => {
+    menuOpen = (e as CustomEvent<{ open: boolean }>).detail.open;
+    clearTimeout(tapTimer);
+    if (menuOpen) {
+      pinnedUntil = 0;
+      hide();
+    } else {
+      revealed = null;
+      pick();
+    }
+  });
   document.addEventListener('astro:before-swap', () => {
     watcher?.disconnect();
     nearMiddle.clear();
