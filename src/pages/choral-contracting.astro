@@ -8,11 +8,21 @@ import zimmerOutline from '../data/outlines/nate-adams-hans-zimmer-2017.json';
 import singersOutline from '../data/outlines/radio-city-hans-zimmer-singers-2017.json';
 import fallonOutline from '../data/outlines/tonight-show-starring-jimmy-fallon.json';
 
+// What I book singers for. Shown on the page and listed in the structured
+// data, so search engines see the same services a visitor does.
+const services = [
+  { name: 'Television tapings', text: 'Choirs and backup singers for network and late-night television, including The Tonight Show and The Daily Show.' },
+  { name: 'Concerts', text: 'Choirs for orchestral and film-score concerts at venues like Carnegie Hall and Radio City Music Hall.' },
+  { name: 'Recording sessions', text: 'Singers for studio and location recordings, from a few voices to a full chorus.' },
+  { name: 'Corporate events', text: 'Ensembles for corporate events and launches, for clients including Accenture and NBC Universal.' },
+];
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'ProfessionalService',
   serviceType: 'Choral Contracting',
   name: 'Nate Adams, NYC Choral Contractor',
+  alternateName: 'Nathaniel Adams, choir contractor in New York City',
   url: new URL('/choral-contracting/', Astro.site).href,
   image: new URL('/images/choral-contracting-hero.jpg', Astro.site).href,
   email: 'nathanielbadams@gmail.com',
@@ -28,6 +38,16 @@ const jsonLd = {
   areaServed: {
     '@type': 'City',
     name: 'New York City',
+  },
+  knowsAbout: ['Choral contracting', 'Hiring choirs', 'Professional singers', 'Backup singers', 'Session singers'],
+  sameAs: ['https://www.linkedin.com/in/adamsnathaniel/'],
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Choral contracting services',
+    itemListElement: services.map((s) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name: s.name, description: s.text, areaServed: 'New York City' },
+    })),
   },
 };
 
@@ -56,8 +76,8 @@ const credits = [
 ];
 ---
 <Layout
-  title="NYC Choral Contractor | Nate Adams"
-  description="Nate Adams is a New York City choral contractor hiring choirs and vocalists for live tapings, concerts, and corporate events at venues including Carnegie Hall, Madison Square Garden, and Radio City Music Hall."
+  title="NYC Choral Contractor: Hire a Choir or Singers | Nate Adams"
+  description="Hire a choir in New York City. Choral contractor Nate Adams books professional singers, from a quartet to a full chorus, for TV, concerts, recordings, and events."
   image="/images/choral-contracting-hero.jpg"
   jsonLd={jsonLd}
 >
@@ -86,6 +106,22 @@ const credits = [
       <p class="label">Contracting since</p>
       <span class="figure-n">2010</span>
     </div>
+  </section>
+
+  <section class="wrap block" aria-labelledby="hire">
+    <h2 id="hire" class="origin h2">Hire a choir in New York</h2>
+    <p class="prose hire-intro">
+      Tell me the date, the venue, and the music. I'll put together the right singers for it, from a
+      quartet to a full chorus.
+    </p>
+    <ul class="grid services">
+      {services.map((s) => (
+        <li class="service">
+          <h3 class="service-name">{s.name}</h3>
+          <p>{s.text}</p>
+        </li>
+      ))}
+    </ul>
   </section>
 
   <section class="wrap block" aria-labelledby="worked-with">
@@ -207,6 +243,45 @@ const credits = [
     .highlights {
       margin-top: 0;
     }
+  }
+
+  .hire-intro {
+    max-width: 38rem;
+    margin-bottom: 2.25rem;
+  }
+
+  .services {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    row-gap: 2rem;
+  }
+
+  .service {
+    grid-column: 1 / -1;
+    border-top: 2px solid var(--ink);
+    padding-top: 0.9rem;
+  }
+
+  @media (min-width: 834px) {
+    .service {
+      grid-column: span 6;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .service {
+      grid-column: span 3;
+    }
+  }
+
+  .service-name {
+    font: 700 1.25rem/1.2 var(--head);
+    margin-bottom: 0.5rem;
+  }
+
+  .service p {
+    color: var(--muted);
   }
 
   .placeholder {
