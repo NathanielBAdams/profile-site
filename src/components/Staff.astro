@@ -34,6 +34,24 @@ const { staves = 2, center = 0.56 } = Astro.props;
     display: none;
   }
 
+  /* Phones: the staff leaves the text and gets its own band under the
+     header, full strength and easy to tap. */
+  @media (max-width: 833px) {
+    :global(.hero:has(> .staff)),
+    :global(.header:has(> .staff)) {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .staff {
+      position: relative;
+      order: 2;
+      height: 11.5rem;
+      margin-bottom: 1rem;
+      touch-action: pan-y;
+    }
+  }
+
   :global(.on-staff) {
     cursor: none;
   }
@@ -70,6 +88,8 @@ const { staves = 2, center = 0.56 } = Astro.props;
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const wide = window.matchMedia('(min-width: 834px)');
+  // Below 834px the staff is its own band (see the styles above).
+  const band = window.matchMedia('(max-width: 833px)');
   const E4 = 4 * 7 + 2; // treble staff bottom line, in diatonic steps from C0
   const G2 = 2 * 7 + 4; // bass staff bottom line
   const C4 = 4 * 7;
@@ -146,6 +166,11 @@ const { staves = 2, center = 0.56 } = Astro.props;
     // on every page, so the staff doesn't move as you navigate. Otherwise it
     // centers at data-center.
     function target(): Geom {
+      if (band.matches && staves === 2) {
+        const g = Math.max(10, Math.min(13, H / 14));
+        const top = H / 2 - g * 6;
+        return { gap: g, tops: [top, top + g * 8] };
+      }
       const title = host.querySelector<HTMLElement>('[data-page-title]');
       const g = staves === 2 ? Math.max(9, Math.min(14, W / 100)) : Math.max(10, Math.min(14, H / 14));
       const staffH = g * 4;
@@ -211,6 +236,11 @@ const { staves = 2, center = 0.56 } = Astro.props;
       const colW = (cw - 11 * gut) / 12;
       const rights = SPECS.filter((s) => s.side !== 'left');
       const lefts = SPECS.filter((s) => s.side === 'left');
+      if (band.matches) {
+        // Its own band: the main chords spread across the whole width.
+        group(rights, clefX + (WIDTH.gClef + 1.4) * gap, col.right, true);
+        return;
+      }
       const railL = wide.matches ? col.left + 8 * (colW + gut) - gut / 2 : col.left + cw * 0.4;
       group(rights, railL, col.right, true);
       const title = host.querySelector<HTMLElement>('.staffed');
@@ -429,7 +459,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
       drawClefs(reach);
       drawBars(reach);
       // On narrow screens the chords sit behind text, so they stay fainter.
-      const idle = wide.matches ? 0.5 : 0.26;
+      const idle = wide.matches || band.matches ? 0.5 : 0.26;
       for (const c of chords) {
         const a = shown(c.cx, reach);
         drawChord(c, INK, idle * a * (1 - c.h));
@@ -616,7 +646,25 @@ const { staves = 2, center = 0.56 } = Astro.props;
 
     let tapTimer = 0;
     let lastChord = -1e9;
+    // Touch: play on a tap that ends where it started, so a swipe through the
+    // staff scrolls the page instead of playing notes.
+    let touchStart: { x: number; y: number; t: number } | null = null;
     function onDown(e: PointerEvent) {
+      if (e.pointerType !== 'mouse') {
+        touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+        return;
+      }
+      strike(e);
+    }
+    function onUp(e: PointerEvent) {
+      if (e.pointerType === 'mouse' || !touchStart) return;
+      const moved = Math.hypot(e.clientX - touchStart.x, e.clientY - touchStart.y);
+      const quick = performance.now() - touchStart.t < 600;
+      touchStart = null;
+      if (moved < 10 && quick) strike(e);
+    }
+    const onCancel = () => (touchStart = null);
+    function strike(e: PointerEvent) {
       if (quiet(e)) return;
       const p = local(e);
       if (!inZone(p.y)) return;
@@ -655,8 +703,12 @@ const { staves = 2, center = 0.56 } = Astro.props;
       host.addEventListener('pointermove', onMove);
       host.addEventListener('pointerleave', onLeave);
       host.addEventListener('pointerdown', onDown);
+      host.addEventListener('pointerup', onUp);
+      host.addEventListener('pointercancel', onCancel);
     }
     function detach() {
+      host.removeEventListener('pointerup', onUp);
+      host.removeEventListener('pointercancel', onCancel);
       host.removeEventListener('pointermove', onMove);
       host.removeEventListener('pointerleave', onLeave);
       host.removeEventListener('pointerdown', onDown);
