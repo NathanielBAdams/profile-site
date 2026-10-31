@@ -664,7 +664,14 @@ const { staves = 2, center = 0.56 } = Astro.props;
     }
 
     layout();
-    window.addEventListener('resize', layout);
+    // Lay out again whenever the canvas changes size: on resize, and when the
+    // header grows as web fonts load (otherwise the drawing would stretch).
+    new ResizeObserver(() => {
+      const r = canvas.getBoundingClientRect();
+      if (Math.abs(r.width - W) < 0.5 && Math.abs(r.height - H) < 0.5) return;
+      layout();
+    }).observe(canvas);
+    document.fonts?.ready.then(layout);
     attach();
     kick();
     return { rehost };

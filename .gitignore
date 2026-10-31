@@ -35,3 +35,5 @@ recordings/
 
 # Previews written by scripts/trace-person.py, for checking an outline
 src/data/outlines/*.preview.png
+test-results/
+playwright-report/
