@@ -2,6 +2,7 @@
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import MeLine from '../components/MeLine.astro';
+import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 
 interface Props {
@@ -47,8 +48,14 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
       // before first paint so the bars never flash at full width.
       if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
         document.documentElement.classList.add('draw-origins');
+        // The page router swaps in the new page's <html> attributes, so set
+        // the class again after every page change.
+        document.addEventListener('astro:after-swap', function () {
+          document.documentElement.classList.add('draw-origins');
+        });
       }
     </script>
+    <ClientRouter />
   </head>
   <body>
     <Nav />
@@ -58,19 +65,24 @@ const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
     <Footer />
     <MeLine />
     <script>
-      if (document.documentElement.classList.contains('draw-origins')) {
-        const io = new IntersectionObserver(
+      import '../scripts/transitions';
+
+      let io: IntersectionObserver | null = null;
+      document.addEventListener('astro:page-load', () => {
+        io?.disconnect();
+        if (!document.documentElement.classList.contains('draw-origins')) return;
+        io = new IntersectionObserver(
           (entries) => {
             for (const e of entries) {
               if (!e.isIntersecting) continue;
               e.target.classList.add('drawn');
-              io.unobserve(e.target);
+              io?.unobserve(e.target);
             }
           },
           { rootMargin: '0px 0px -12% 0px' },
         );
-        document.querySelectorAll('.origin').forEach((el) => io.observe(el));
-      }
+        document.querySelectorAll('.origin:not(.drawn)').forEach((el) => io!.observe(el));
+      });
     </script>
   </body>
 </html>

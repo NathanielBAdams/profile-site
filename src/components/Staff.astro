@@ -9,7 +9,7 @@ interface Props {
 }
 const { staves = 2, center = 0.56 } = Astro.props;
 ---
-<canvas class="staff" data-staves={staves} data-center={center} aria-hidden="true"></canvas>
+<canvas class="staff" data-staves={staves} data-center={center} aria-hidden="true" transition:persist="staff"></canvas>
 
 <style>
   .staff {
@@ -17,6 +17,21 @@ const { staves = 2, center = 0.56 } = Astro.props;
     inset: 0;
     width: 100%;
     height: 100%;
+    /* The host section takes the pointer; see attach(). */
+    pointer-events: none;
+    /* Between pages the canvas stays live and animates itself (see rehost),
+       so the view transition leaves it alone. */
+    view-transition-name: staff;
+  }
+
+  :global(::view-transition-group(staff)),
+  :global(::view-transition-old(staff)),
+  :global(::view-transition-new(staff)) {
+    animation: none;
+  }
+
+  :global(::view-transition-old(staff)) {
+    display: none;
   }
 
   :global(.on-staff) {
@@ -50,6 +65,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
     stems: { x: number; y1: number; y2: number }[];
     ledgers: { x1: number; x2: number; y: number }[];
     h: number; pulse: number; hover: boolean; sound: Sounding | null;
+    key: number; // index in SPECS, to carry state across re-engraving
   };
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -71,10 +87,10 @@ const { staves = 2, center = 0.56 } = Astro.props;
   }));
 
   function init(canvas: HTMLCanvasElement) {
-    const host = canvas.parentElement as HTMLElement;
+    let host = canvas.parentElement as HTMLElement;
     const ctx = canvas.getContext('2d')!;
     const staves = Number(canvas.dataset.staves || 2);
-    const center = Number(canvas.dataset.center || 0.56);
+    let center = Number(canvas.dataset.center || 0.56);
     const css = getComputedStyle(document.documentElement);
     const INK = css.getPropertyValue('--ink').trim() || '#141414';
     const ACCENT = css.getPropertyValue('--verm').trim() || '#c63a2b';
@@ -93,6 +109,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
     let bars: { x: number; w: number }[] = [];
     let primed = false;
     let lastStep = -1;
+    type Geom = { gap: number; tops: number[] };
 
     // The content column of the page, in canvas coordinates.
     function content() {
@@ -107,29 +124,81 @@ const { staves = 2, center = 0.56 } = Astro.props;
       };
     }
 
-    function layout() {
+    function size() {
       const r = canvas.getBoundingClientRect();
       W = r.width;
       H = r.height;
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      gap = staves === 2 ? Math.max(9, Math.min(15, H / 30)) : Math.max(10, Math.min(14, H / 14));
-      const staffH = gap * 4;
-      const between = gap * 4;
-      const total = staves === 2 ? staffH * 2 + between : staffH;
-      const top = H * center - total / 2;
-      tops = staves === 2 ? [top, top + staffH + between] : [top];
+    }
+
+    // An element's top within the host, ignoring transforms (the title may be
+    // mid-animation when this runs).
+    function offsetIn(el: HTMLElement) {
+      let y = 0;
+      for (let n: HTMLElement | null = el; n && n !== host; n = n.offsetParent as HTMLElement | null) y += n.offsetTop;
+      return y;
+    }
+
+    // Where the staff belongs in the current host. With a page title, the
+    // staff sits at a fixed distance below the title's top, which is the same
+    // on every page, so the staff doesn't move as you navigate. Otherwise it
+    // centers at data-center.
+    function target(): Geom {
+      const title = host.querySelector<HTMLElement>('[data-page-title]');
+      const g = staves === 2 ? Math.max(9, Math.min(14, W / 100)) : Math.max(10, Math.min(14, H / 14));
+      const staffH = g * 4;
+      const total = staves === 2 ? staffH * 3 : staffH;
+      const mid = title && staves === 2
+        ? offsetIn(title) + 10 * g
+        : H * center;
+      const top = mid - total / 2;
+      return { gap: g, tops: staves === 2 ? [top, top + staffH * 2] : [top] };
+    }
+
+    // Lays out lines, clefs and chords for a given geometry, keeping the lines'
+    // motion and each chord's hover and sound.
+    function build(g: Geom) {
+      gap = g.gap;
+      tops = g.tops;
       const ys: number[] = [];
       for (const t of tops) for (let l = 0; l < 5; l++) ys.push(t + l * gap);
-      lines = ys.map((y) => ({ y, d: new Float32Array(N), v: new Float32Array(N) }));
+      const prev = lines;
+      lines = ys.map((y, i) => ({ y, d: prev[i]?.d ?? new Float32Array(N), v: prev[i]?.v ?? new Float32Array(N) }));
       const col = content();
       clefX = Math.max(gap * 0.6, col.left - gap * 4);
+      const old = chords;
       chords = [];
       bars = [];
       if (staves === 2 && SPECS.length) engraveAll(col);
+      for (const c of chords) {
+        const o = old.find((x) => x.key === c.key);
+        if (o) Object.assign(c, { h: o.h, pulse: o.pulse, hover: o.hover, sound: o.sound });
+      }
+    }
+
+    function layout() {
+      size();
+      build(target());
       draw();
     }
+
+    // After a page change: the canvas now sits in the new page's header, in
+    // the same place as before (see target()).
+    function rehost(nextCenter: number) {
+      detach();
+      host = canvas.parentElement as HTMLElement;
+      attach();
+      center = nextCenter;
+      note = null;
+      last = null;
+      size();
+      build(target());
+      draw();
+      kick();
+    }
+
 
     // Chords sit in measures, one half-note chord each. The right group fills
     // the rail columns (or the right part of a narrow screen). The left group
@@ -168,6 +237,7 @@ const { staves = 2, center = 0.56 } = Astro.props;
           x0, x1, cx: (x0 + x1) / 2,
           heads: [], accs: [], stems: [], ledgers: [],
           h: 0, pulse: 0, hover: false, sound: null,
+          key: SPECS.indexOf(spec),
         };
         const onTreble = (p: Pitch) => spec.treble.has(p.name) || (!spec.bass.has(p.name) && p.step >= C4);
         const up = spec.pitches.filter(onTreble);
@@ -581,13 +651,37 @@ const { staves = 2, center = 0.56 } = Astro.props;
       kick();
     }
 
+    function attach() {
+      host.addEventListener('pointermove', onMove);
+      host.addEventListener('pointerleave', onLeave);
+      host.addEventListener('pointerdown', onDown);
+    }
+    function detach() {
+      host.removeEventListener('pointermove', onMove);
+      host.removeEventListener('pointerleave', onLeave);
+      host.removeEventListener('pointerdown', onDown);
+      host.classList.remove('on-staff', 'on-chord');
+    }
+
     layout();
     window.addEventListener('resize', layout);
-    host.addEventListener('pointermove', onMove);
-    host.addEventListener('pointerleave', onLeave);
-    host.addEventListener('pointerdown', onDown);
+    attach();
     kick();
+    return { rehost };
   }
 
-  document.querySelectorAll<HTMLCanvasElement>('canvas.staff').forEach(init);
+  // One staff for the whole visit: the page router keeps this canvas across
+  // pages (transition:persist), so chords keep ringing as you navigate.
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas.staff');
+  const staff = canvas ? init(canvas) : null;
+  let nextCenter = 0.56;
+  document.addEventListener('astro:before-swap', (e) => {
+    const c = e.newDocument.querySelector<HTMLCanvasElement>('canvas.staff');
+    nextCenter = Number(c?.dataset.center || 0.56);
+  });
+  document.addEventListener('astro:after-swap', () => {
+    if (!staff || !canvas?.isConnected) return;
+    canvas.dataset.center = String(nextCenter);
+    staff.rehost(nextCenter);
+  });
 </script>

@@ -30,7 +30,7 @@ const src = `https://w.soundcloud.com/player/?${params}`;
 </div>
 
 <script>
-  document.querySelectorAll<HTMLElement>('.sc').forEach((el) => {
+  document.addEventListener('astro:page-load', () => document.querySelectorAll<HTMLElement>('.sc').forEach((el) => {
     el.querySelector('button')?.addEventListener('click', () => {
       const iframe = document.createElement('iframe');
       iframe.src = el.dataset.src!;
@@ -40,7 +40,7 @@ const src = `https://w.soundcloud.com/player/?${params}`;
       el.replaceChildren(iframe);
       iframe.focus();
     });
-  });
+  }));
 </script>
 
 <style>

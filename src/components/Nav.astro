@@ -123,49 +123,52 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
 </style>
 
 <script>
-  const nav = document.querySelector<HTMLElement>('.nav-links');
-  const bar = nav?.querySelector<HTMLElement>('.nav-bar');
-  if (nav && bar) {
-    const links = [...nav.querySelectorAll<HTMLAnchorElement>('a')];
-    const current = links.find((a) => a.getAttribute('aria-current') === 'page') ?? null;
-    let shown = false;
+  // Runs on every page: the page router swaps the nav in fresh each time.
+  document.addEventListener('astro:page-load', () => {
+    const nav = document.querySelector<HTMLElement>('.nav-links');
+    const bar = nav?.querySelector<HTMLElement>('.nav-bar');
+    if (nav && bar) {
+      const links = [...nav.querySelectorAll<HTMLAnchorElement>('a')];
+      const current = links.find((a) => a.getAttribute('aria-current') === 'page') ?? null;
+      let shown = false;
 
-    const place = (a: HTMLAnchorElement | null) => {
-      if (!a) {
-        bar.style.opacity = '0';
-        shown = false;
-        return;
-      }
-      // Appearing from nothing: jump into place, then fade in, so it never
-      // slides in from the left edge.
-      if (!shown) nav.classList.remove('ready');
-      const y = a.offsetTop + a.offsetHeight + a.offsetHeight * 0.18;
-      // Transform only (no width), so the glide never triggers layout.
-      bar.style.transform = `translate(${a.offsetLeft}px, ${y}px) scaleX(${a.offsetWidth / 100})`;
-      if (!shown) {
-        void bar.offsetWidth;
-        nav.classList.add('ready');
-      }
-      bar.style.opacity = '1';
-      shown = true;
-    };
+      const place = (a: HTMLAnchorElement | null) => {
+        if (!a) {
+          bar.style.opacity = '0';
+          shown = false;
+          return;
+        }
+        // Appearing from nothing: jump into place, then fade in, so it never
+        // slides in from the left edge.
+        if (!shown) nav.classList.remove('ready');
+        const y = a.offsetTop + a.offsetHeight + a.offsetHeight * 0.18;
+        // Transform only (no width), so the glide never triggers layout.
+        bar.style.transform = `translate(${a.offsetLeft}px, ${y}px) scaleX(${a.offsetWidth / 100})`;
+        if (!shown) {
+          void bar.offsetWidth;
+          nav.classList.add('ready');
+        }
+        bar.style.opacity = '1';
+        shown = true;
+      };
 
-    nav.classList.add('sliding');
-    place(current);
-    for (const a of links) {
-      a.addEventListener('pointerenter', () => place(a));
-      a.addEventListener('focus', () => place(a));
-      a.addEventListener('blur', () => place(current));
-    }
-    nav.addEventListener('pointerleave', () => place(current));
-    // Re-measure when the web fonts arrive or the nav reflows (link widths
-    // change), jumping rather than gliding.
-    const settle = () => {
-      if (nav.matches(':hover') || nav.contains(document.activeElement)) return;
-      shown = false;
+      nav.classList.add('sliding');
       place(current);
-    };
-    document.fonts?.ready.then(settle);
-    new ResizeObserver(settle).observe(nav);
-  }
+      for (const a of links) {
+        a.addEventListener('pointerenter', () => place(a));
+        a.addEventListener('focus', () => place(a));
+        a.addEventListener('blur', () => place(current));
+      }
+      nav.addEventListener('pointerleave', () => place(current));
+      // Re-measure when the web fonts arrive or the nav reflows (link widths
+      // change), jumping rather than gliding.
+      const settle = () => {
+        if (nav.matches(':hover') || nav.contains(document.activeElement)) return;
+        shown = false;
+        place(current);
+      };
+      document.fonts?.ready.then(settle);
+      new ResizeObserver(settle).observe(nav);
+    }
+  });
 </script>

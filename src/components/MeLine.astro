@@ -9,7 +9,7 @@
 //   frame. Credits whose photo isn't on the page do nothing, so photos can
 //   be added, swapped or removed by changing those attributes alone.
 ---
-<svg class="me-line" aria-hidden="true">
+<svg class="me-line" aria-hidden="true" transition:persist="me-line">
   <path />
   <circle r="3" />
 </svg>
@@ -287,8 +287,21 @@
   }
 
   // Mark the credits that have a photo on this page, so only they respond.
-  document.querySelectorAll<HTMLElement>('[data-shows]').forEach((el) => {
-    if (photoFor(el.dataset.shows ?? '')) el.classList.add('shows-photo');
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLElement>('[data-shows]').forEach((el) => {
+      if (photoFor(el.dataset.shows ?? '')) el.classList.add('shows-photo');
+    });
+  });
+
+  // Leaving the page: drop any line at once.
+  document.addEventListener('astro:before-swap', () => {
+    link = null;
+    p = 0;
+    dir = 0;
+    pinnedUntil = 0;
+    clearTimeout(tapTimer);
+    line.removeAttribute('d');
+    dot.style.opacity = '0';
   });
 
   const shapeOf = (t: EventTarget | null) =>

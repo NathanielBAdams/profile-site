@@ -112,6 +112,7 @@ const jsonLd = {
 };
 ---
 <script>
+  document.addEventListener('astro:page-load', () => {
   for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
     btn.addEventListener('click', async () => {
       const text = document.getElementById(btn.dataset.copy!)?.textContent?.trim() ?? '';
@@ -124,6 +125,7 @@ const jsonLd = {
       setTimeout(() => (btn.textContent = 'Copy bio'), 1800);
     });
   }
+  });
 </script>
 
 <Layout
@@ -134,7 +136,7 @@ const jsonLd = {
   <section class="header">
     <Staff />
     <div class="wrap header-inner">
-      <h1 class="display origin staffed rise">Music</h1>
+      <h1 class="display origin staffed rise" data-page-title>Music</h1>
       <p class="lede staffed rise rise-2">
         I write music for choirs and voices, and I sing professionally in New York.
       </p>
