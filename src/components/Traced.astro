@@ -12,6 +12,7 @@ interface Outline {
   height: number;
   path: string;
   top: number[];
+  bounds?: number[]; // x, y, width, height of his outline
 }
 // A friend: someone else in the photo who gets their own quieter outline and
 // label on hover, in a second color. Just for fun.
@@ -32,10 +33,14 @@ interface Props {
 const { outline, friend, alt, label = false, cover = false, top: alignTop = false, lazy = true, class: cls } = Astro.props;
 const { image: src, width: w, height: h, path, top } = outline;
 const id = `me-${src.replace(/\W+/g, '-')}`;
+// The middle of his outline, which phone bands zoom in on.
+const [bx, by, bw, bh] = outline.bounds ?? [top[0], top[1], 0, 0];
+const nx = (bx + bw / 2) / w;
+const ny = (by + bh / 2) / h;
 ---
 <div
   class:list={['traced', cover && 'cover', cover && alignTop && 'top', cls]}
-  style={`--w: ${w}; --h: ${h}; --tx: ${top[0] / w}; --ty: ${top[1] / h};${friend ? ` --fx: ${friend.outline.top[0] / w}; --fy: ${friend.outline.top[1] / h};` : ''}`}
+  style={`--w: ${w}; --h: ${h}; --tx: ${top[0] / w}; --ty: ${top[1] / h}; --nx: ${nx}; --ny: ${ny};${friend ? ` --fx: ${friend.outline.top[0] / w}; --fy: ${friend.outline.top[1] / h};` : ''}`}
 >
   <img
     src={src}
@@ -44,6 +49,7 @@ const id = `me-${src.replace(/\W+/g, '-')}`;
     height={h}
     loading={lazy ? 'lazy' : undefined}
     decoding="async"
+    onload="this.parentElement.classList.add('ready')"
   />
   <svg
     viewBox={`0 0 ${w} ${h}`}
@@ -110,6 +116,40 @@ const id = `me-${src.replace(/\W+/g, '-')}`;
     width: 100%;
     height: 100%;
     pointer-events: none;
+  }
+
+  /* No tint until the photo has arrived, so a slow connection never shows a
+     pink silhouette on an empty frame. */
+  .traced:not(.ready) .me-shape {
+    fill: transparent;
+  }
+
+  /* Phones: a band would shrink a group photo to a strip of tiny faces, so
+     it gets taller and zooms in around Nate instead, keeping him in frame.
+     The photo and its outline are placed with the same numbers, so they stay
+     lined up. */
+  @media (max-width: 833px) {
+    .traced.cover {
+      height: min(80vw, 26rem);
+      --iw: max(155cqw, 100cqh * var(--w) / var(--h));
+      --ox: clamp(100cqw - var(--iw), 50cqw - var(--iw) * var(--nx), 0px);
+      --oy: clamp(100cqh - var(--ih), 50cqh - var(--ih) * var(--ny), 0px);
+    }
+
+    .traced.cover img,
+    .traced.cover svg {
+      position: absolute;
+      left: var(--ox);
+      top: var(--oy);
+      width: var(--iw);
+      height: var(--ih);
+      max-width: none;
+      object-fit: fill;
+    }
+
+    .traced.cover.top {
+      --oy: clamp(100cqh - var(--ih), 50cqh - var(--ih) * var(--ny), 0px);
+    }
   }
 
   .me-shape {

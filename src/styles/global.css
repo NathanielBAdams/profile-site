@@ -431,6 +431,30 @@ img {
     padding-top: 2.75rem;
     padding-bottom: 1.75rem;
   }
+
+  /* Photo rows: two portraits side by side, landscapes (.wide) across the
+     full width, so a row of three doesn't become three screens of photos. */
+  .photos {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: dense;
+    align-items: start;
+    gap: 1.75rem 0.75rem;
+  }
+
+  .photos > figure.wide,
+  .photos > figure:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .photos > figure:not(.wide) .photo-frame img {
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+  }
+
+  .photos figcaption {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
