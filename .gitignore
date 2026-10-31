@@ -37,3 +37,4 @@ recordings/
 src/data/outlines/*.preview.png
 test-results/
 playwright-report/
+tests/visual/__screenshots__/local/

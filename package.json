@@ -10,7 +10,7 @@
     "preview": "astro preview",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
-    "test:visual:docker": "docker run --rm --ipc=host -v \"$PWD\":/work -w /work mcr.microsoft.com/playwright:v1.63.0-noble sh -c \"npm ci && npx playwright test\""
+    "test:visual:docker": "docker run --rm --ipc=host -e CI=1 -v \"$PWD\":/work -w /work mcr.microsoft.com/playwright:v1.63.0-noble sh -c \"npm ci && npx playwright test\""
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

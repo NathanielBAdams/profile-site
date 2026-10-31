@@ -1,17 +1,26 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Desktop screenshot tests: they guard the dialed-in desktop design while
-// the phone layout changes. Baselines live in tests/visual/__screenshots__
-// and are made on Linux (in CI, or `npm run test:visual:docker` on a Mac),
-// because fonts render slightly differently on each OS.
+// the phone layout changes.
+//
+// Fonts render a hair differently from one machine to the next, so each
+// environment compares against baselines made in that same environment:
+// - ci: GitHub Actions (Playwright's Linux image). These are committed, and
+//   are the ones that count. `npm run test:visual:docker` runs the same image
+//   on a Mac. To approve a desktop change, run the workflow by hand with
+//   "update baselines" checked; it commits the new images.
+// - local: any other machine (git-ignored). Made with test:visual:update.
 const PORT = 4400;
+const SET = process.env.CI ? 'ci' : 'local';
 
 export default defineConfig({
   testDir: 'tests/visual',
-  snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}',
+  snapshotPathTemplate: `{testDir}/__screenshots__/${SET}/{arg}{ext}`,
   fullyParallel: true,
   retries: 0,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/results.json' }]]
+    : 'list',
   expect: {
     toHaveScreenshot: {
       animations: 'disabled',
