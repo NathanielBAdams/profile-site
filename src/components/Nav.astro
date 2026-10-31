@@ -98,16 +98,26 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
     left: 0;
     top: 0;
     height: 2px;
-    width: 0;
+    width: 100px;
+    transform-origin: 0 0;
     background: var(--verm);
     opacity: 0;
     pointer-events: none;
+    /* Keep the bar on its own layer at all times. Safari otherwise promotes
+       and demotes it on each hover, which re-renders the link text and makes
+       it shift slightly. */
+    will-change: transform, opacity;
+  }
+
+  /* Hold the link text steady through hover and color changes. */
+  .nav-links a {
+    -webkit-font-smoothing: antialiased;
+    backface-visibility: hidden;
   }
 
   .nav-links.ready .nav-bar {
     transition:
       transform 0.45s var(--ease),
-      width 0.45s var(--ease),
       opacity 0.25s ease;
   }
 </style>
@@ -130,8 +140,8 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
       // slides in from the left edge.
       if (!shown) nav.classList.remove('ready');
       const y = a.offsetTop + a.offsetHeight + a.offsetHeight * 0.18;
-      bar.style.transform = `translate(${a.offsetLeft}px, ${y}px)`;
-      bar.style.width = `${a.offsetWidth}px`;
+      // Transform only (no width), so the glide never triggers layout.
+      bar.style.transform = `translate(${a.offsetLeft}px, ${y}px) scaleX(${a.offsetWidth / 100})`;
       if (!shown) {
         void bar.offsetWidth;
         nav.classList.add('ready');
