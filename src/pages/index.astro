@@ -241,6 +241,24 @@ const areas = [
     transform: scale(1.025);
   }
 
+  /* Touch screens keep :hover after a tap or scroll; only the press shows. */
+  @media (hover: none) {
+    .role:hover,
+    .area:hover .area-link {
+      color: inherit;
+    }
+
+    .role:hover,
+    .area:hover .area-link span {
+      transform: none;
+    }
+
+    .role:active,
+    .area:active .area-link {
+      color: var(--verm);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .area-link span {
       transform: none !important;

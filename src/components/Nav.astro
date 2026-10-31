@@ -373,6 +373,7 @@ const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.ur
         toggle.setAttribute('aria-expanded', String(open));
         toggle.querySelector('.sr-only')!.textContent = open ? 'Close menu' : 'Menu';
         document.documentElement.style.overflow = open ? 'hidden' : '';
+        document.documentElement.classList.toggle('menu-open', open);
         // The photo line steps aside while the menu is open (MeLine.astro).
         document.dispatchEvent(new CustomEvent('nav:menu', { detail: { open } }));
         if (open) nav.querySelector<HTMLElement>('a')?.focus({ preventScroll: true });

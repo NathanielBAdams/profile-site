@@ -25,6 +25,21 @@
     overflow: visible;
   }
 
+  .me-line {
+    transition: opacity 0.2s ease;
+  }
+
+  :global(html.menu-open) .me-line {
+    opacity: 0;
+  }
+
+  /* Touch screens keep :hover after a tap; credits shouldn't stay red. */
+  @media (hover: none) {
+    :global(.shows-photo:hover) {
+      color: inherit;
+    }
+  }
+
   path {
     fill: none;
     stroke: var(--verm);
@@ -77,6 +92,7 @@
     to: () => Point; // where the stroke lands
     mark: HTMLElement; // gets a class while the link is shown
     cls: string;
+    gutter?: boolean; // run down the page's left margin, clear of the text
   };
   let link: Link | null = null;
   let p = 0; // progress 0..1
@@ -168,7 +184,24 @@
 
   // One continuous stroke: a slightly irregular loop around the name, a
   // little more than a full turn, which flows into a curve down to Nate.
-  function stroke(a: DOMRect, to: { x: number; y: number }) {
+  // Touch screens: from the loop, the line drops into the left margin, runs
+  // down it (outside the text column), and turns in to land on the side of
+  // the label (or his head), so it never crosses a word.
+  function gutterPath(pts: [number, number][], to: Point) {
+    const f = (n: number) => n.toFixed(1);
+    const [ex, ey] = pts[pts.length - 1];
+    const pad = parseFloat(getComputedStyle(document.querySelector('.wrap') ?? document.body).paddingLeft) || 20;
+    const gx = Math.max(5, pad * 0.45);
+    const top = (document.querySelector('.nav')?.getBoundingClientRect().bottom ?? ey) + 10;
+    const turn = Math.min(36, Math.max(12, (to.x - gx) * 0.5));
+    const y2 = Math.max(top + turn, to.y);
+    let d = ` C${f(ex)} ${f(ey + 16)} ${f(gx)} ${f(top - 10)} ${f(gx)} ${f(top)}`;
+    d += ` L${f(gx)} ${f(y2 - turn)}`;
+    if (to.x - gx > 2) d += ` C${f(gx)} ${f(y2)} ${f(gx)} ${f(y2)} ${f(gx + turn)} ${f(y2)} L${f(to.x)} ${f(to.y)}`;
+    return d;
+  }
+
+  function stroke(a: DOMRect, to: { x: number; y: number }, gutter = false) {
     const cx = a.left + a.width / 2;
     const cy = a.top + a.height / 2;
     const pad = Math.max(7, Math.min(a.height * 0.38, 22));
@@ -185,6 +218,7 @@
       const k = (0.97 + 0.07 * t) * (1 + 0.022 * Math.sin(3 * th + 1.3));
       pts.push([cx + rx * k * Math.cos(th), cy + ry * k * Math.sin(th)]);
     }
+    if (gutter) return 'M' + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L') + gutterPath(pts, to as Point);
     const [ex, ey] = pts[N];
     const [px, py] = pts[N - 1];
     const tl = Math.hypot(ex - px, ey - py) || 1;
@@ -217,7 +251,7 @@
     const a = link.from();
     if (!a) return;
     const to = link.to();
-    line.setAttribute('d', stroke(a, to));
+    line.setAttribute('d', stroke(a, to, link.gutter));
     const L = line.getTotalLength();
     const e = ease(p);
     line.style.strokeDasharray = `${L} ${L}`;
@@ -279,7 +313,18 @@
       const n = document.querySelector('[data-me-name="nav"]');
       return n ? textRect(n) : nameRect();
     };
-    return { key: el, from: touch ? navName : nameRect, to: () => landing(el), mark: el, cls: touch ? 'is-active' : 'is-hovered' };
+    if (!touch) return { key: el, from: nameRect, to: () => landing(el), mark: el, cls: 'is-hovered' };
+    // Touch: land on the label's left side, or beside his head.
+    const to = (): Point => {
+      const p = landing(el);
+      const label = el.querySelector('.me-label');
+      if (p.label && label && p.y <= window.innerHeight) {
+        const r = label.getBoundingClientRect();
+        return { x: r.left, y: r.top + r.height / 2, label: true };
+      }
+      return p;
+    };
+    return { key: el, from: navName, to, mark: el, cls: 'is-active', gutter: true };
   }
 
   // A credit: circle it, land on its photo, frame the photo.

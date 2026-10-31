@@ -151,7 +151,17 @@ const ny = (by + bh / 2) / h;
     .traced.cover.top {
       --oy: clamp(100cqh - var(--ih), 50cqh - var(--ih) * var(--ny), 0px);
     }
+
+    /* Keep the labels inside the band when his head is near its top. */
+    .traced.cover .me-label {
+      top: max(calc(var(--oy) + var(--ih) * var(--ty) - 0.6rem), 2.1rem);
+    }
+
+    .traced.cover .friend-label {
+      top: max(calc(var(--oy) + var(--ih) * var(--fy) - 0.6rem), 2.1rem);
+    }
   }
+
 
   .me-shape {
     fill: rgb(198 58 43 / 0.2);
@@ -258,6 +268,29 @@ const ny = (by + bh / 2) / h;
     .friend-shape,
     .friend-color {
       transition: none;
+    }
+  }
+
+  /* Touch screens keep :hover after a tap, which would leave a photo lit
+     after scrolling away. There, only the scroll reveal (is-active) shows. */
+  @media (hover: none) {
+    .traced.traced.ready:not(.is-active) .me-shape {
+      fill: rgb(198 58 43 / 0.2);
+      stroke: transparent;
+    }
+
+    .traced.traced:not(.is-active) .me-color,
+    .traced.traced:not(.is-active) .friend-color {
+      opacity: 0;
+    }
+
+    .traced.traced:not(.is-active) .friend-shape {
+      stroke: transparent;
+    }
+
+    .traced.traced.traced:not(.is-active) .me-label {
+      opacity: 0;
+      translate: -50% calc(-100% + 0.25rem);
     }
   }
 </style>

@@ -115,26 +115,16 @@ const jsonLd = {
 
 <script>
   // Phones: each work is a row that opens to show the rest (see the styles).
-  document.addEventListener('astro:page-load', () => {
-    for (const work of document.querySelectorAll<HTMLElement>('.work')) {
-      const toggle = work.querySelector<HTMLButtonElement>('.work-toggle');
-      if (!toggle) continue;
-      const set = (open: boolean) => {
-        work.classList.toggle('open', open);
-        toggle.setAttribute('aria-expanded', String(open));
-      };
-      toggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        set(!work.classList.contains('open'));
-      });
-      // The whole closed row is a target, not just the caret.
-      work.addEventListener('click', (e) => {
-        if (getComputedStyle(toggle).display === 'none') return;
-        if ((e.target as Element).closest('a, button, iframe, .sc, .watch')) return;
-        if (!work.classList.contains('open')) set(true);
-        else if ((e.target as Element).closest('.work-title')) set(false);
-      });
-    }
+  // The toggle is a real button stretched over the whole closed row, so a tap
+  // anywhere on it opens it. Listening on the document means it works however
+  // the page arrived.
+  document.addEventListener('click', (e) => {
+    const toggle = (e.target as Element).closest<HTMLButtonElement>('.work-toggle');
+    const work = toggle?.closest<HTMLElement>('.work');
+    if (!toggle || !work) return;
+    const open = !work.classList.contains('open');
+    work.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
   });
 
   // "Watch the performance" glides down to its video instead of jumping,
@@ -302,11 +292,9 @@ const jsonLd = {
       position: relative;
       padding: 1rem 0 1.15rem;
       row-gap: 0.4rem;
-      cursor: pointer;
     }
 
     .work.open {
-      cursor: auto;
       padding-bottom: 1.75rem;
       row-gap: 1rem;
     }
@@ -334,20 +322,26 @@ const jsonLd = {
       display: flex;
     }
 
+    /* Closed: the button covers the whole row (the caret sits at its top
+       right). Open: just the title strip, so the links inside stay tappable. */
     .work-toggle {
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
       position: absolute;
-      top: 0.55rem;
-      right: -0.6rem;
-      width: 2.75rem;
-      height: 2.75rem;
-      padding: 0;
+      inset: 0 -0.6rem 0 0;
+      z-index: 1;
+      padding: 1.25rem 0.75rem 0 0;
       border: 0;
       background: none;
       color: var(--ink);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    .work.open .work-toggle {
+      bottom: auto;
+      height: 4rem;
     }
 
     .work-toggle svg {
@@ -366,7 +360,7 @@ const jsonLd = {
       stroke: var(--verm);
     }
 
-    .work:active .work-title {
+    .work:has(.work-toggle:active) .work-title {
       color: var(--verm);
     }
   }
