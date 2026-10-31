@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { subtitles } from '../data/subtitles';
 import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
 import Traced from '../components/Traced.astro';
@@ -24,22 +25,22 @@ const areas = [
   {
     title: 'Choral contracting',
     href: '/choral-contracting/',
-    text: 'I hire and coordinate professional singers for television tapings, concerts, and events, from a quartet to a full chorus.',
+    text: subtitles.contracting,
   },
   {
     title: 'Composition',
     href: '/composition/',
-    text: 'I write choral music, including Lux Brumalis and He Came All So Still, published by Walton Music and Gentry Publications.',
+    text: subtitles.composition,
   },
   {
     title: 'Performance',
     href: '/performance/',
-    text: 'I sing with choirs and vocal ensembles in New York and across the country, including the New York Philharmonic and Musica Sacra.',
+    text: subtitles.performance,
   },
   {
     title: 'Software',
     href: '/software/',
-    text: 'I work on front-end engineering and product design at Datadog, building AI-assisted workflows for Cloud SIEM.',
+    text: subtitles.software,
   },
 ];
 ---

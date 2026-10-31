@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { subtitles } from '../data/subtitles';
 import Staff from '../components/Staff.astro';
 ---
 <Layout
@@ -10,10 +11,7 @@ import Staff from '../components/Staff.astro';
     <Staff />
     <div class="wrap header-inner">
       <h1 class="display origin staffed rise" data-page-title>Software</h1>
-      <p class="lede staffed rise rise-2">
-        I work where front-end engineering meets product design, currently on AI-assisted
-        workflows.
-      </p>
+      <p class="lede staffed rise rise-2">{subtitles.software}</p>
     </div>
   </section>
 

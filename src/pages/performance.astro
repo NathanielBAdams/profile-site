@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { subtitles } from '../data/subtitles';
 import Staff from '../components/Staff.astro';
 import Closing from '../components/Closing.astro';
 import Linked from '../components/Linked.astro';
@@ -68,9 +69,7 @@ const jsonLd = {
     <Staff />
     <div class="wrap header-inner">
       <h1 class="display origin staffed rise" data-page-title>Performance</h1>
-      <p class="lede staffed rise rise-2">
-        I sing with choirs and vocal ensembles in New York and across the country.
-      </p>
+      <p class="lede staffed rise rise-2">{subtitles.performance}</p>
     </div>
   </section>
 
