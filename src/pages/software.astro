@@ -4,6 +4,7 @@ import { subtitles } from '../data/subtitles';
 import Staff from '../components/Staff.astro';
 import Traced from '../components/Traced.astro';
 import demoOutline from '../data/outlines/clear-tech-demo.json';
+import datadogOutline from '../data/outlines/datadog-design-demo.json';
 ---
 <Layout
   title="Nate Adams | Software Engineer, Frontend and Design"
@@ -48,12 +49,29 @@ import demoOutline from '../data/outlines/clear-tech-demo.json';
         </tbody>
       </table>
     </div>
+    <div class="rail photos">
+      <figure>
+        <Traced outline={datadogOutline} alt="Nate Adams, in a red flannel shirt and cap, presenting with his team at Datadog to a room of engineers, their title slide on the screen beside them" label />
+        <figcaption>Yes, I really love this flannel.</figcaption>
+      </figure>
+    </div>
   </section>
 </Layout>
 
 <style>
   .rows {
     padding-bottom: clamp(4rem, 9vw, 7rem);
+  }
+
+  /* Beside the table on wide screens, below it on phones. */
+  .rail.photos {
+    margin-top: 3rem;
+  }
+
+  @media (min-width: 834px) {
+    .rail.photos {
+      margin-top: 0;
+    }
   }
 
   .rows .table tr:first-child td {
