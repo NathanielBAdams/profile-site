@@ -2,6 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import { subtitles } from '../data/subtitles';
 import Staff from '../components/Staff.astro';
+import Traced from '../components/Traced.astro';
+import demoOutline from '../data/outlines/clear-tech-demo.json';
 ---
 <Layout
   title="Nate Adams | Software Engineer, Frontend and Design"
@@ -14,6 +16,8 @@ import Staff from '../components/Staff.astro';
       <p class="lede staffed rise rise-2">{subtitles.software}</p>
     </div>
   </section>
+
+  <Traced outline={demoOutline} alt="Nate Adams, in a red flannel shirt with a microphone, giving a tech demo of CLEAR's web verification flow to a room of colleagues, the slide projected behind him" cover label lazy={false} />
 
   <section class="wrap grid block rows">
     <div class="lead">
