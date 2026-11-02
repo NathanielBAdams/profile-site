@@ -4,8 +4,10 @@
 # request lists what changed, and the full report (with the differing images)
 # is attached to the run.
 #
-# To approve an intentional desktop change, run this workflow by hand on the
-# branch with "update baselines" checked: it commits the new images.
+# To approve an intentional desktop change, either put [baselines] in the
+# commit message (the run then takes new images instead of failing), or run
+# this workflow by hand on the branch with "update baselines" checked. Either
+# way it commits the new images with [skip ci], so that commit starts no run.
 # (Deploys are separate: Amplify builds main.)
 name: Desktop screenshots
 
@@ -41,19 +43,28 @@ jobs:
           cache: npm
       - run: npm ci
 
+      - name: Choose compare or update
+        id: mode
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          if [ "${{ inputs.update }}" = "true" ] || git log -1 --format=%B | grep -qF '[baselines]'; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Compare with baselines
-        if: ${{ !inputs.update }}
+        if: ${{ steps.mode.outputs.update != 'true' }}
         run: npx playwright test
 
       - name: Update baselines
-        if: ${{ inputs.update }}
+        if: ${{ steps.mode.outputs.update == 'true' }}
         run: |
           npx playwright test --update-snapshots
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
           git add tests/visual/__screenshots__/ci
-          git diff --cached --quiet || git commit -m "Update desktop screenshot baselines (CI)"
+          git diff --cached --quiet || git commit -m "Update desktop screenshot baselines (CI) [skip ci]"
           git push
 
       - name: Comment what changed
