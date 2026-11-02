@@ -3,14 +3,26 @@ frontend:
   phases:
     preBuild:
       commands:
-        - nvm install 22
-        - nvm use 22
-        - npm ci
-    # IMPORTANT - Please verify your build commands
+        # Astro 7 needs Node 22. The official Node 22 needs glibc 2.28, which
+        # the Amazon Linux 2 build image doesn't have, so there we use the
+        # Node.js project's unofficial build for older glibc (2.17). On a newer
+        # image (Amazon Linux 2023), plain nvm works.
+        - |
+          GLIBC=$(ldd --version | head -1 | grep -oE '[0-9]+\.[0-9]+$')
+          if [ "$(printf '%s\n2.28' "$GLIBC" | sort -V | head -1)" = "2.28" ]; then
+            nvm install 22 && nvm use 22
+            echo "$(dirname "$(nvm which 22)")" > /tmp/node-bin
+          else
+            V=$(curl -fsSL https://unofficial-builds.nodejs.org/download/release/index.json | python3 -c "import json,sys; print(next(r['version'] for r in json.load(sys.stdin) if r['version'].startswith('v22.') and 'linux-x64-glibc-217' in r['files']))")
+            curl -fsSL "https://unofficial-builds.nodejs.org/download/release/$V/node-$V-linux-x64-glibc-217.tar.xz" | tar -xJ -C /tmp
+            echo "/tmp/node-$V-linux-x64-glibc-217/bin" > /tmp/node-bin
+          fi
+        - export PATH="$(cat /tmp/node-bin):$PATH" && node -v && npm -v
+        - export PATH="$(cat /tmp/node-bin):$PATH" && npm ci
     build:
-      commands: ['npm run build']
+      commands:
+        - export PATH="$(cat /tmp/node-bin):$PATH" && npm run build
   artifacts:
-    # IMPORTANT - Please verify your build output directory
     baseDirectory: dist
     files:
       - '**/*'
