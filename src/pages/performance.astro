@@ -1,0 +1,234 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { subtitles } from '../data/subtitles';
+import Staff from '../components/Staff.astro';
+import Closing from '../components/Closing.astro';
+import Linked from '../components/Linked.astro';
+import Traced from '../components/Traced.astro';
+import fallonOutline from '../data/outlines/tonight-show-starring-jimmy-fallon.json';
+import hmmOutline from '../data/outlines/his-majestys-men-chicago-2023.json';
+import singersOutline from '../data/outlines/radio-city-hans-zimmer-singers-2017.json';
+
+const bio =
+  'Nathaniel Adams is a New York-based vocalist equally comfortable in classical and jazz idioms. He performs regularly with ensembles including the Saint Thomas Choir of Men and Boys, the New York Philharmonic, Musica Sacra, and Clarion Music Society. In addition to his performance career, Nathaniel is a commissioned and published composer whose choral works have been performed across the U.S. and internationally in venues ranging from Lincoln Center to choral festivals in Colombia and China. He is a Resident Composer with the St. Charles Singers and has had works premiered by leading American choirs and vocal ensembles. Since 2010 he has also worked as a choral contractor in New York City, hiring choirs and singers for television, concerts, and events at venues including Carnegie Hall, Radio City Music Hall, and Madison Square Garden.';
+
+const ensembles = [
+  'Saint Thomas Choir of Men and Boys',
+  'New York Philharmonic',
+  'Musica Sacra',
+  'Clarion Music Society',
+  "His Majesty's Men",
+];
+
+// A credit with `shows` points to the photo whose data-photo includes that id
+// (hover draws a line to it), as on the Contracting page.
+// Who I've sung with. A `shows` id points to the photo with that data-photo,
+// as on the Contracting page.
+const collaborators = [
+  { name: 'Madonna' },
+  { name: 'Hans Zimmer', shows: 'hans-zimmer' },
+  { name: 'Vampire Weekend', shows: 'vampire-weekend' },
+];
+
+const shows: Record<string, string> = {
+  'The Tonight Show Starring Jimmy Fallon': 'tonight-show',
+};
+const creditGroups = [
+  { label: 'Venues', names: ['Carnegie Hall', 'Lincoln Center', 'Madison Square Garden', 'Radio City Music Hall'] },
+  { label: 'Television', names: ['The Tonight Show Starring Jimmy Fallon', 'The Daily Show'] },
+  { label: 'Events', names: ['NBC Universal', 'Accenture', 'Sundance Film Festival'] },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Nathaniel Adams',
+  alternateName: 'Nate Adams',
+  url: new URL('/', Astro.site).href,
+  jobTitle: 'Vocalist',
+  description: bio,
+  address: { '@type': 'PostalAddress', addressLocality: 'New York', addressRegion: 'NY', addressCountry: 'US' },
+  knowsAbout: ['Choral singing', 'Classical music', 'Jazz'],
+  sameAs: ['https://soundcloud.com/nathanielbadams', 'https://www.linkedin.com/in/adamsnathaniel/'],
+};
+---
+<script>
+  document.addEventListener('astro:page-load', () => {
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+      btn.addEventListener('click', async () => {
+        const text = document.getElementById(btn.dataset.copy!)?.textContent?.trim() ?? '';
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = 'Copied';
+        } catch {
+          btn.textContent = 'Select the text to copy';
+        }
+        setTimeout(() => (btn.textContent = 'Copy bio'), 1800);
+      });
+    }
+  });
+</script>
+
+<Layout
+  title="Nathaniel Adams | Vocalist, New York City"
+  description="Nathaniel Adams is a vocalist singing with choirs and vocal ensembles in New York and across the country, including the Saint Thomas Choir of Men and Boys, the New York Philharmonic, Musica Sacra, and Clarion Music Society."
+  jsonLd={jsonLd}
+>
+  <section class="header">
+    <Staff />
+    <div class="wrap header-inner">
+      <h1 class="display origin staffed rise" data-page-title>Performance</h1>
+      <p class="lede staffed rise rise-2">{subtitles.performance}</p>
+    </div>
+  </section>
+
+  <Traced outline={hmmOutline} alt="Nate Adams, second from left in glasses, singing with His Majesty's Men in Chicago, August 2023: five men in black shirts at music stands in front of a gilded church altar, the audience in the foreground" cover label lazy={false} />
+
+  <section class="wrap block" aria-labelledby="bio-title">
+    <h2 id="bio-title" class="origin h2">Bio</h2>
+    <div class="grid bio">
+      <p class="lead bio-text" id="bio-text"><Linked text={bio} /></p>
+      <div class="rail">
+        <p class="muted bio-note">For programs and press.</p>
+        <button class="bio-copy" type="button" data-copy="bio-text">Copy bio</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap block" aria-labelledby="sings-with">
+    <h2 id="sings-with" class="origin h2">Sings with</h2>
+    <ul class="names">
+      {ensembles.map((e) => <li><Linked text={e} /></li>)}
+    </ul>
+  </section>
+
+  <section class="wrap block" aria-labelledby="worked-with">
+    <h2 id="worked-with" class="origin h2">Worked with</h2>
+    <ul class="names">
+      {collaborators.map((c) => <li data-shows={c.shows}>{c.name}</li>)}
+    </ul>
+    <!-- Equal heights: column widths follow each photo's width-to-height ratio. -->
+    <div class="photos pair" style="--cols: 9fr 9fr">
+      <figure data-photo="hans-zimmer">
+        <Traced outline={singersOutline} alt="Nate Adams, center, and fellow singers in black, wearing headset microphones, seated together for the Hans Zimmer concerts at Radio City Music Hall" label />
+        <figcaption>With the choir for Hans Zimmer at Radio City Music Hall, 2017.</figcaption>
+      </figure>
+      <figure data-photo="tonight-show vampire-weekend">
+        <Traced outline={fallonOutline} alt="Nate Adams in a hard hat and safety vest beside The Tonight Show Starring Jimmy Fallon sign" />
+        <figcaption>Singing backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="wrap grid block">
+    <div class="lead">
+      <h2 class="origin h2">Credits</h2>
+      {creditGroups.map((g) => (
+        <div class="credit-group">
+          <p class="label">{g.label}</p>
+          <ul class="credit-list">
+            {g.names.map((name) => <li data-shows={shows[name]}>{name}</li>)}
+          </ul>
+        </div>
+      ))}
+    </div>
+    <div class="rail highlights">
+      <h2 class="origin h2">Selected work</h2>
+      <ul class="list">
+        <li>Sang with the Clarion Music Society at the 2018 Met Gala, performing with Madonna</li>
+        <li data-shows="vampire-weekend">Sang backup for Vampire Weekend on The Tonight Show Starring Jimmy Fallon</li>
+        <li>Regular concerts with the New York Philharmonic at Lincoln Center and Carnegie Hall</li>
+        <li>Music for the inaugurations of Celebrity Cruises' Equinox and Eclipse</li>
+      </ul>
+    </div>
+  </section>
+
+  <Closing
+    title="Looking for a singer?"
+    text="For concerts, recordings, and tapings, email me with the date and the music."
+    href="mailto:nathanielbadams@gmail.com?subject=Performance%20inquiry"
+  />
+</Layout>
+
+<style>
+  .bio {
+    row-gap: 1.25rem;
+  }
+
+  .bio-text {
+    max-width: 40rem;
+    font: 400 clamp(1.1rem, 1.6vw, 1.3rem)/1.55 var(--head);
+  }
+
+  .bio-note {
+    margin-bottom: 0.6rem;
+  }
+
+  .bio-copy {
+    font: 600 0.9rem/1 var(--head);
+    padding: 0.6rem 0.9rem;
+    color: var(--ink);
+    background: transparent;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .bio-copy:hover,
+  .bio-copy:focus-visible {
+    color: var(--verm);
+    border-color: var(--verm);
+  }
+
+  .names {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font: 800 clamp(1.9rem, 4.4vw, 3.6rem)/1.02 var(--head);
+    letter-spacing: -0.03em;
+  }
+
+  .names :global(a) {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .names :global(a:hover) {
+    color: var(--verm);
+  }
+
+  .photos.pair {
+    max-width: 52rem;
+  }
+
+  .credit-group + .credit-group {
+    margin-top: 2rem;
+  }
+
+  .credit-group .label {
+    margin-bottom: 0.6rem;
+  }
+
+  .credit-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 2px solid var(--ink);
+  }
+
+  .credit-list li {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .highlights {
+    margin-top: 3rem;
+  }
+
+  @media (min-width: 834px) {
+    .highlights {
+      margin-top: 0;
+    }
+  }
+</style>

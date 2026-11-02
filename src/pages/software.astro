@@ -1,0 +1,80 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { subtitles } from '../data/subtitles';
+import Staff from '../components/Staff.astro';
+import Traced from '../components/Traced.astro';
+import demoOutline from '../data/outlines/clear-tech-demo.json';
+import datadogOutline from '../data/outlines/datadog-design-demo.json';
+---
+<Layout
+  title="Nate Adams | Software Engineer, Frontend and Design"
+  description="Nate Adams is a software engineer at Datadog, working across frontend engineering and product design on AI-assisted workflows for Cloud SIEM. Previously at CLEAR."
+>
+  <section class="header">
+    <Staff />
+    <div class="wrap header-inner">
+      <h1 class="display origin staffed rise" data-page-title>Software</h1>
+      <p class="lede staffed rise rise-2">{subtitles.software}</p>
+    </div>
+  </section>
+
+  <Traced outline={demoOutline} alt="Nate Adams, in a red flannel shirt with a microphone, giving a tech demo of CLEAR's web verification flow to a room of colleagues, the slide projected behind him" cover label lazy={false} />
+
+  <section class="wrap grid block rows">
+    <div class="lead">
+      <table class="table">
+        <tbody>
+          <tr>
+            <td>Now</td>
+            <td>
+              At <a href="https://www.datadoghq.com/" target="_blank" rel="noopener noreferrer">Datadog</a>,
+              working on Cloud SIEM
+            </td>
+          </tr>
+          <tr>
+            <td>Before</td>
+            <td>
+              At <a href="https://www.clearme.com/" target="_blank" rel="noopener noreferrer">CLEAR</a>,
+              building its web verification app and design system
+            </td>
+          </tr>
+          <tr>
+            <td>Focus</td>
+            <td>Frontend engineering, product design, design systems, and AI-assisted workflows</td>
+          </tr>
+          <tr>
+            <td>Elsewhere</td>
+            <td><a href="https://www.linkedin.com/in/adamsnathaniel/" target="_blank" rel="noopener noreferrer">Full history on LinkedIn</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rail photos">
+      <figure>
+        <Traced outline={datadogOutline} alt="Nate Adams, in a red flannel shirt and cap, presenting with his team at Datadog to a room of engineers, their title slide on the screen beside them" label />
+        <figcaption>Yes, I really love this flannel.</figcaption>
+      </figure>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rows {
+    padding-bottom: clamp(4rem, 9vw, 7rem);
+  }
+
+  /* Beside the table on wide screens, below it on phones. */
+  .rail.photos {
+    margin-top: 3rem;
+  }
+
+  @media (min-width: 834px) {
+    .rail.photos {
+      margin-top: 0;
+    }
+  }
+
+  .rows .table tr:first-child td {
+    border-top: 2px solid var(--ink);
+  }
+</style>

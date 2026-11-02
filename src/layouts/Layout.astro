@@ -1,0 +1,88 @@
+---
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import MeLine from '../components/MeLine.astro';
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description, image, jsonLd } = Astro.props;
+const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const canonicalURL = new URL(path, Astro.site);
+const ogImageURL = image ? new URL(image, Astro.site).toString() : undefined;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f4f0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalURL} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    {ogImageURL && <meta property="og:image" content={ogImageURL} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {ogImageURL && <meta name="twitter:image" content={ogImageURL} />}
+
+    {jsonLd && (
+      <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+    )}
+    <script is:inline>
+      // Origin rules draw in as their sections arrive (see global.css). Set
+      // before first paint so the bars never flash at full width.
+      if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('draw-origins');
+        // The page router swaps in the new page's <html> attributes, so set
+        // the class again after every page change.
+        document.addEventListener('astro:after-swap', function () {
+          document.documentElement.classList.add('draw-origins');
+        });
+      }
+    </script>
+    <ClientRouter />
+  </head>
+  <body>
+    <Nav />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+    <MeLine />
+    <script>
+      import '../scripts/transitions';
+
+      let io: IntersectionObserver | null = null;
+      document.addEventListener('astro:page-load', () => {
+        io?.disconnect();
+        if (!document.documentElement.classList.contains('draw-origins')) return;
+        io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (!e.isIntersecting) continue;
+              e.target.classList.add('drawn');
+              io?.unobserve(e.target);
+            }
+          },
+          { rootMargin: '0px 0px -12% 0px' },
+        );
+        document.querySelectorAll('.origin:not(.drawn)').forEach((el) => io!.observe(el));
+      });
+    </script>
+  </body>
+</html>
