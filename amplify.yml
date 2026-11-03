@@ -3,15 +3,35 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Astro 7 needs Node 22.12 or newer. The app builds on the Amazon
-        # Linux 2023 image (_CUSTOM_IMAGE=amplify:al2023), which runs it.
-        - nvm install 22
-        - nvm use 22
-        - node -v
-        - npm ci
+        # Astro 7 needs Node 22. The official Node 22 needs glibc 2.28, which
+        # the Amazon Linux 2 build image doesn't have, so there we use the
+        # Node.js project's unofficial build for older glibc (2.17). On a newer
+        # image (Amazon Linux 2023), plain nvm works.
+        - |
+          (
+          set -e
+          GLIBC=$(ldd --version | head -1 | grep -oE '[0-9]+\.[0-9]+$')
+          if [ "$(printf '%s\n2.28' "$GLIBC" | sort -V | head -1)" = "2.28" ]; then
+            nvm install 22 && nvm use 22
+            dirname "$(nvm which 22)" > /tmp/node-bin
+          else
+            # The image's own Node (16) is enough to read the release list.
+            BASE=https://unofficial-builds.nodejs.org/download/release
+            V=$(curl -fsSL "$BASE/index.json" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s).find(r=>r.version.startsWith('v22.')&&r.files.includes('linux-x64-glibc-217'));if(!r)process.exit(1);console.log(r.version)})")
+            echo "glibc $GLIBC: using unofficial Node $V built for glibc 2.17"
+            curl -fsSL "$BASE/$V/node-$V-linux-x64-glibc-217.tar.gz" -o /tmp/node22.tar.gz
+            mkdir -p /tmp/node22
+            tar -xzf /tmp/node22.tar.gz -C /tmp/node22 --strip-components=1
+            echo /tmp/node22/bin > /tmp/node-bin
+          fi
+          # Stop here, loudly, if this isn't Node 22 or newer.
+          "$(cat /tmp/node-bin)/node" -e "if(+process.versions.node.split('.')[0]<22){console.error('Wrong Node: '+process.version);process.exit(1)}"
+          )
+        - export PATH="$(cat /tmp/node-bin):$PATH" && node -v && npm -v
+        - export PATH="$(cat /tmp/node-bin):$PATH" && npm ci
     build:
       commands:
-        - npm run build
+        - export PATH="$(cat /tmp/node-bin):$PATH" && npm run build
   artifacts:
     baseDirectory: dist
     files:
