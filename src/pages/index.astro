@@ -58,7 +58,6 @@ const areas = [
           <span class="nw"><a class="role" href="/choral-contracting/">Choral contractor</a>,</span> <span class="nw"><a class="role" href="/composition/">composer</a>,</span> <span class="nw"><a class="role" href="/performance/">singer</a>,</span> and <a class="role" href="/software/">software engineer</a> in New York City.
       </p>
       <div class="grid below">
-        <p class="lead hint"><span class="by-mouse">Click the staff to hear a note, or click a chord.</span><span class="by-touch">Tap the staff below to hear a note, or tap a chord.</span></p>
         <div class="rail venues rise rise-3">
           <p class="label">Selected venues</p>
           <p class="venue-list">Carnegie Hall, Radio City Music Hall, Madison Square Garden, Lincoln Center</p>
@@ -157,21 +156,7 @@ const areas = [
     }
   }
 
-  .by-touch {
-    display: none;
-  }
-
-  @media (hover: none) {
-    .by-mouse {
-      display: none;
-    }
-
-    .by-touch {
-      display: inline;
-    }
-  }
-
-  /* Phones: the staff band follows, so the hint sits right above it. */
+  /* Phones: the staff band follows the intro. */
   @media (max-width: 833px) {
     .hero-inner {
       padding-top: 2.75rem;
@@ -185,11 +170,6 @@ const areas = [
     .below {
       margin-top: 2.25rem;
     }
-  }
-
-  .hint {
-    font-size: 0.85rem;
-    color: var(--muted);
   }
 
   .areas {

@@ -45,13 +45,13 @@ test.describe('hover states at 1440', () => {
     await expect(page).toHaveScreenshot('hover-credit.png');
   });
 
-  test('home: hovering a chord lights it', async ({ page }) => {
+  test('home: hovering the staff shows the half note', async ({ page }) => {
     await settle(page, '/');
     const staff = page.locator('canvas.staff');
     const box = (await staff.boundingBox())!;
     await page.mouse.move(box.x + box.width * 0.76, box.y + box.height * 0.5);
     await page.waitForTimeout(300);
-    await expect(page.locator('.hero')).toHaveScreenshot('hover-chord.png');
+    await expect(page.locator('.hero')).toHaveScreenshot('hover-note.png');
   });
 
   test('composition: hovering Watch the performance', async ({ page }) => {
